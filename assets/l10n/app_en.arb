@@ -1,0 +1,23 @@
+{
+    "appTitle": "Time Capsule",
+    "dashboard": "Dashboard",
+    "capsules": "Capsules",
+    "settings": "Settings",
+    "createCapsule": "Create Capsule",
+    "totalCapsules": "Total Capsules",
+    "unlockable": "Unlockable",
+    "locked": "Locked",
+    "capsuleListTitle": "Capsule List",
+    "createPageTitle": "Create Capsule",
+    "selectUnlockTime": "Select unlock time",
+    "unlockTime": "Unlock time: {time}",
+    "selectFile": "Select file",
+    "pleaseFillAll": "Please fill all fields",
+    "createFailed": "Creation failed: {error}",
+    "decryptSuccess": "Decrypted successfully, preparing preview",
+    "openFailed": "Open failed",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+}

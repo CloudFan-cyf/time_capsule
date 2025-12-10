@@ -1,0 +1,23 @@
+{
+    "appTitle": "时光胶囊",
+    "dashboard": "Dashboard",
+    "capsules": "胶囊列表",
+    "settings": "设置",
+    "createCapsule": "创建胶囊",
+    "totalCapsules": "总胶囊数",
+    "unlockable": "可解锁数",
+    "locked": "未到期",
+    "capsuleListTitle": "时光胶囊列表",
+    "createPageTitle": "创建胶囊",
+    "selectUnlockTime": "请选择解锁时间",
+    "unlockTime": "解锁时间：{time}",
+    "selectFile": "选择文件",
+    "pleaseFillAll": "请完整填写信息",
+    "createFailed": "创建失败：{error}",
+    "decryptSuccess": "解密成功，准备预览",
+    "openFailed": "打开失败",
+    "theme": "主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+}
