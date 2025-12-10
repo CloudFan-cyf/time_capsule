@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../l10n/app_localizations.dart';
 import '../../repository/capsule_repository.dart';
 import '../../services/crypto_service.dart';
 import '../../services/time_service.dart';
 import '../../models/capsule.dart';
+import 'package:time_capsule/generated/l10n.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -88,24 +88,23 @@ class _DashboardPageState extends State<DashboardPage> {
     if (loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    final l10n = AppLocalizations.of(context);
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _statCard(
-            l10n.totalCapsules,
+            S.of(context).totalCapsules,
             '$total',
             icon: Icons.inventory_2_outlined,
           ),
           _statCard(
-            l10n.unlockable,
+            S.of(context).unlockable,
             '$unlockable',
             icon: Icons.lock_open_outlined,
           ),
           _statCard(
-            l10n.locked,
+            S.of(context).locked,
             '${total - unlockable}',
             icon: Icons.lock_outline,
           ),
@@ -116,7 +115,12 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  // Keep content minimal; actions via FAB
+                  Text(
+                    '快速操作',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 12),
+                  Text('使用右下角按钮创建新胶囊或切换到列表页进行管理。'),
                 ],
               ),
             ),

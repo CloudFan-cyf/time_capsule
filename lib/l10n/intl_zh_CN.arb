@@ -9,6 +9,7 @@
     "locked": "未到期",
     "capsuleListTitle": "时光胶囊列表",
     "createPageTitle": "创建胶囊",
+    "capsuleName": "胶囊名称",
     "selectUnlockTime": "请选择解锁时间",
     "unlockTime": "解锁时间：{time}",
     "selectFile": "选择文件",
@@ -19,5 +20,9 @@
     "theme": "主题",
     "light": "浅色",
     "dark": "深色",
-    "system": "跟随系统"
+    "system": "跟随系统",
+    "navDashboard": "Dashboard",
+    "navCapsules": "胶囊列表",
+    "navSettings": "设置",
+    "@@locale": "zh_CN"
 }

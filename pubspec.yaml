@@ -26,5 +26,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
-  assets:
-    - assets/l10n/
+flutter_intl:
+  enabled: true

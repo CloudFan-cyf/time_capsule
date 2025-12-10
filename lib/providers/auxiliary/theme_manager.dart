@@ -1,51 +1,53 @@
 import 'package:flutter/material.dart';
 
-class AppTheme {
-  static ThemeData light() {
-    return ThemeData(
-      brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.indigo,
-        brightness: Brightness.light,
-      ),
-      useMaterial3: true,
-      textTheme: _textTheme,
-    );
-  }
+class ThemeManager extends ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.system;
+  Color _seedColor = Colors.indigo;
 
-  static ThemeData dark() {
-    return ThemeData(
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.indigo,
-        brightness: Brightness.dark,
-      ),
-      useMaterial3: true,
-      textTheme: _textTheme,
-    );
-  }
+  /// 设为 null 表示使用系统默认字体
+  String? _fontFamily;
 
-  static const _textTheme = TextTheme(
-    displayLarge: TextStyle(fontWeight: FontWeight.w700),
-    displayMedium: TextStyle(fontWeight: FontWeight.w700),
-    headlineMedium: TextStyle(fontWeight: FontWeight.w600),
-    titleLarge: TextStyle(fontWeight: FontWeight.w600),
-    bodyLarge: TextStyle(fontSize: 16.0),
-    bodyMedium: TextStyle(fontSize: 14.0),
-  );
-}
+  ThemeMode get themeMode => _themeMode;
+  Color get seedColor => _seedColor;
+  String? get fontFamily => _fontFamily;
 
-class AppSettings extends ChangeNotifier {
-  ThemeMode themeMode = ThemeMode.system;
-  Locale locale = const Locale('zh');
-
-  void setThemeMode(ThemeMode mode) {
-    themeMode = mode;
+  set themeMode(ThemeMode mode) {
+    if (_themeMode == mode) return;
+    _themeMode = mode;
     notifyListeners();
   }
 
-  void setLocale(Locale newLocale) {
-    locale = newLocale;
+  void setSeedColor(Color color) {
+    if (_seedColor == color) return;
+    _seedColor = color;
     notifyListeners();
+  }
+
+  void setFontFamily(String? family) {
+    if (_fontFamily == family) return;
+    _fontFamily = family;
+    notifyListeners();
+  }
+
+  ThemeData get lightTheme => _build(Brightness.light);
+  ThemeData get darkTheme => _build(Brightness.dark);
+
+  ThemeData _build(Brightness brightness) {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: _seedColor,
+      brightness: brightness,
+    );
+
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      brightness: brightness,
+    );
+
+    final textTheme = (_fontFamily == null)
+        ? base.textTheme
+        : base.textTheme.apply(fontFamily: _fontFamily);
+
+    return base.copyWith(textTheme: textTheme);
   }
 }

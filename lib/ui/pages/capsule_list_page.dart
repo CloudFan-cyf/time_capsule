@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../l10n/app_localizations.dart';
 import '../../repository/capsule_repository.dart';
 import '../../services/crypto_service.dart';
 import '../../services/time_service.dart';
 import 'create_capsule_page.dart';
 import '../../models/capsule.dart';
+import 'package:time_capsule/generated/l10n.dart';
 
 class CapsuleListPage extends StatefulWidget {
   const CapsuleListPage({super.key});
@@ -34,9 +34,8 @@ class _CapsuleListPageState extends State<CapsuleListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.capsuleListTitle)),
+      appBar: AppBar(title: Text(S.of(context).capsuleListTitle)),
       body: ListView.builder(
         itemCount: items.length,
         itemBuilder: (context, index) {
@@ -44,21 +43,23 @@ class _CapsuleListPageState extends State<CapsuleListPage> {
           return ListTile(
             title: Text(c.title),
             subtitle: Text(
-              '${c.origFilename} · ${l10n.unlockTime(DateTime.fromMillisecondsSinceEpoch(c.unlockAtUtcMs).toLocal().toString())}',
+              '${c.origFilename} · ${S.of(context).unlockTime}: ${DateTime.fromMillisecondsSinceEpoch(c.unlockAtUtcMs).toLocal()}',
             ),
             onTap: () async {
               final res = await repo.openCapsule(c);
               if (res.opened) {
                 if (!mounted) return;
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(l10n.decryptSuccess)));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(S.of(context).decryptSuccess)),
+                );
                 // TODO: navigate to preview or open with system
               } else {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(res.error?.message ?? l10n.openFailed),
+                    content: Text(
+                      res.error?.message ?? S.of(context).openFailed,
+                    ),
                   ),
                 );
               }
@@ -66,7 +67,6 @@ class _CapsuleListPageState extends State<CapsuleListPage> {
           );
         },
       ),
-      // FAB handled by AppShell for consistency; keep page simple
     );
   }
 }

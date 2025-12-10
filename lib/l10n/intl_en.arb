@@ -10,6 +10,7 @@
     "capsuleListTitle": "Capsule List",
     "createPageTitle": "Create Capsule",
     "selectUnlockTime": "Select unlock time",
+    "capsuleName": "Capsule Name",
     "unlockTime": "Unlock time: {time}",
     "selectFile": "Select file",
     "pleaseFillAll": "Please fill all fields",
@@ -19,5 +20,9 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "navDashboard": "Dashboard",
+    "navCapsules": "Capsules",
+    "navSettings": "Settings",
+    "@@locale": "en"
 }

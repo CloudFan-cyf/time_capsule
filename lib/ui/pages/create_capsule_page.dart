@@ -4,6 +4,7 @@ import '../../repository/capsule_repository.dart';
 import '../../services/crypto_service.dart';
 import '../../services/time_service.dart';
 import '../../models/capsule.dart';
+import 'package:time_capsule/generated/l10n.dart';
 
 class CreateCapsulePage extends StatefulWidget {
   const CreateCapsulePage({super.key});
@@ -30,14 +31,14 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('创建胶囊')),
+      appBar: AppBar(title: Text(S.of(context).createCapsule)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
               controller: titleCtrl,
-              decoration: const InputDecoration(labelText: '标题'),
+              decoration: InputDecoration(labelText: S.of(context).capsuleName),
             ),
             const SizedBox(height: 12),
             Row(
@@ -45,8 +46,8 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                 Expanded(
                   child: Text(
                     unlockAt == null
-                        ? '请选择解锁时间'
-                        : '解锁时间：${unlockAt!.toLocal()}',
+                        ? S.of(context).selectUnlockTime
+                        : '${S.of(context).unlockTime}: ${unlockAt!.toLocal()}',
                   ),
                 ),
                 TextButton(
@@ -73,15 +74,20 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                       setState(() => unlockAt = dt.toUtc());
                     }
                   },
-                  child: const Text('选择时间'),
+                  child: Text(S.of(context).selectUnlockTime),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: Text(srcFile?.path ?? '请选择源文件（稍后实现文件选择）')),
-                TextButton(onPressed: () {}, child: const Text('选择文件')),
+                Expanded(
+                  child: Text(srcFile?.path ?? S.of(context).selectFile),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  child: Text(S.of(context).selectFile),
+                ),
               ],
             ),
             const Spacer(),
@@ -90,9 +96,9 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                 if (srcFile == null ||
                     unlockAt == null ||
                     titleCtrl.text.isEmpty) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('请完整填写信息')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(S.of(context).pleaseFillAll)),
+                  );
                   return;
                 }
                 try {
@@ -105,12 +111,14 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                   Navigator.of(context).pop();
                 } catch (e) {
                   if (!mounted) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('创建失败：$e')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${S.of(context).createFailed}: $e'),
+                    ),
+                  );
                 }
               },
-              child: const Text('创建'),
+              child: Text(S.of(context).createCapsule),
             ),
           ],
         ),
