@@ -6,6 +6,8 @@ import '../../core/crypto/crypto_service.dart';
 import '../../core/time/time_service.dart';
 import '../../features/capsules/data/models/capsule.dart';
 import 'package:time_capsule/generated/l10n.dart';
+import 'package:time_capsule/core/storage/file_store.dart';
+import 'package:time_capsule/features/capsules/data/capsule_events.dart';
 
 class CreateCapsulePage extends StatefulWidget {
   const CreateCapsulePage({super.key});
@@ -23,8 +25,9 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
   @override
   void initState() {
     super.initState();
+    final fs = FileStoreImpl();
     repo = CapsuleRepositoryImpl(
-      cryptoService: CryptoServiceImpl(),
+      cryptoService: CryptoServiceImpl(fileStore: fs),
       timeService: TimeServiceImpl(),
     );
   }
@@ -88,7 +91,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                 TextButton(
                   onPressed: () async {
                     final result = await FilePicker.platform.pickFiles(
-                      withData: true,
+                      withData: false,
                     );
                     if (result == null || result.files.isEmpty) return;
 
@@ -118,6 +121,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                     unlockAtUtcMs: unlockAt!.millisecondsSinceEpoch,
                   );
                   await repo.createCapsuleFromFile(pickedFile!, params);
+                  notifyCapsulesChanged();
                   if (!mounted) return;
                   Navigator.of(context).pop();
                 } catch (e) {

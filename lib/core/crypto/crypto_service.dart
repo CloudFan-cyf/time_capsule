@@ -25,8 +25,8 @@ class CryptoServiceImpl implements CryptoService {
     : fileStore = fileStore ?? FileStoreImpl();
 
   String _newId() {
-    final r = Random.secure().nextInt(1 << 32).toRadixString(16);
     final t = DateTime.now().toUtc().microsecondsSinceEpoch.toString();
+    final r = Random.secure().nextInt(1 << 32).toRadixString(16);
     return '$t-$r';
   }
 
@@ -35,7 +35,7 @@ class CryptoServiceImpl implements CryptoService {
     File src,
     CapsuleParams params,
   ) async {
-    // 先确保 device key 存在（占位：后续真正加密时会用到）
+    // 占位：确保 device key 存在（后续加密会用）
     await fileStore.getOrCreateDeviceKey();
 
     final id = _newId();
@@ -43,46 +43,60 @@ class CryptoServiceImpl implements CryptoService {
     final origFilename = p.basename(src.path);
     final origSize = await src.length();
 
-    // 1) 创建胶囊目录 & copy 源文件到 payload.enc（占位，不加密）
+    // 1) copy 源文件到 payload.enc（占位，暂不加密）
     final payload = await fileStore.copySourceToPayload(
       capsuleId: id,
       src: src,
     );
 
-    // 2) 写 manifest.json（先用最小字段，后续加密会补 keyWrap / integrity 等）
-    final manifest = <String, Object?>{
+    // 2) 写 manifest.json
+    final manifestMap = <String, Object?>{
       'id': id,
       'title': params.title,
       'createdAtUtcMs': createdAtUtcMs,
       'unlockAtUtcMs': params.unlockAtUtcMs,
       'origFilename': origFilename,
+      'mime': null, // 占位：后续可补 MIME sniff
       'origSize': origSize,
       'payload': {
         'path': 'payload.enc',
         'formatVersion': 1,
-        'placeholder': true, // 标记当前是占位明文 copy
+        'placeholder': true,
       },
+      // 下面这些字段后续加密版本再加入：
+      // 'keyWrap': {...},
+      // 'integrity': {...},
+      'status': 0,
     };
+
     final manifestFile = await fileStore.writeManifest(
       capsuleId: id,
-      manifest: manifest,
+      manifest: manifestMap,
     );
 
-    // 3) 组装 Capsule 模型（字段名按你现有 model 调整）
     final capsule = Capsule(
       id: id,
       title: params.title,
-      unlockAtUtcMs: params.unlockAtUtcMs,
+      origFilename: origFilename,
+      mime: null,
       createdAtUtcMs: createdAtUtcMs,
+      unlockAtUtcMs: params.unlockAtUtcMs,
+      origSize: origSize,
       encPath: payload.path,
       manifestPath: manifestFile.path,
-      status: 0, // 初始状态
-      // 如果你的 Capsule 还有 origFilename/origSize 等字段，也建议带上
-      origFilename: origFilename,
-      origSize: origSize,
+      status: 0,
+      lastTimeCheckUtcMs: null,
+      lastTimeSource: null,
     );
 
     return CapsuleCreateResult(capsule);
+  }
+
+  int? _asInt(Object? v) {
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v);
+    return null;
   }
 
   @override
@@ -90,19 +104,21 @@ class CryptoServiceImpl implements CryptoService {
     required File payloadFile,
     required File manifestFile,
   }) async {
-    // 占位版：不解密，直接 copy 到 temp 并返回
-    final manifest = await fileStore.readManifest(manifestFile);
-    final origFilename = (manifest['origFilename'] as String?) ?? 'file.bin';
+    // 占位：不解密，直接 copy 到临时目录返回
+    final m = await fileStore.readManifest(manifestFile);
+    final origFilename = (m['origFilename'] as String?) ?? 'file.bin';
 
     final tmp = await fileStore.createTempFile(
       filename:
           'timecapsule_${DateTime.now().millisecondsSinceEpoch}_$origFilename',
     );
 
-    if (await tmp.exists()) {
-      await tmp.delete();
-    }
+    if (await tmp.exists()) await tmp.delete();
     await payloadFile.copy(tmp.path);
+
+    // 你也可以顺手更新 manifest 里的 lastTimeCheck / lastTimeSource（可选）
+    // 不过严格来说这应该由 repository / db 负责
+
     return tmp;
   }
 }
