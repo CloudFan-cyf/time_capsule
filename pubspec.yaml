@@ -17,6 +17,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
+  path: any
+  file_picker: any
+  uuid: any
+  cryptography: any
 
 dev_dependencies:
   flutter_test:

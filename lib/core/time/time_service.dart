@@ -1,4 +1,4 @@
-import '../models/network_time.dart';
+import '../../features/capsules/data/models/network_time.dart';
 
 abstract class TimeService {
   Future<NetworkTimeResult> getTrustedNowUtc();

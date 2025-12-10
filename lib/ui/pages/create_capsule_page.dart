@@ -1,9 +1,10 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../../repository/capsule_repository.dart';
-import '../../services/crypto_service.dart';
-import '../../services/time_service.dart';
-import '../../models/capsule.dart';
+import '../../features/capsules/data/capsule_repository.dart';
+import '../../core/crypto/crypto_service.dart';
+import '../../core/time/time_service.dart';
+import '../../features/capsules/data/models/capsule.dart';
 import 'package:time_capsule/generated/l10n.dart';
 
 class CreateCapsulePage extends StatefulWidget {
@@ -16,7 +17,7 @@ class CreateCapsulePage extends StatefulWidget {
 class _CreateCapsulePageState extends State<CreateCapsulePage> {
   final titleCtrl = TextEditingController();
   DateTime? unlockAt;
-  File? srcFile; // TODO: integrate a file picker later
+  File? pickedFile; // TODO: integrate a file picker later
   late final CapsuleRepository repo;
 
   @override
@@ -47,7 +48,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                   child: Text(
                     unlockAt == null
                         ? S.of(context).selectUnlockTime
-                        : '${S.of(context).unlockTime}: ${unlockAt!.toLocal()}',
+                        : S.of(context).unlockTime(unlockAt!.toLocal()),
                   ),
                 ),
                 TextButton(
@@ -82,10 +83,20 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
             Row(
               children: [
                 Expanded(
-                  child: Text(srcFile?.path ?? S.of(context).selectFile),
+                  child: Text(pickedFile?.path ?? S.of(context).selectFile),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    final result = await FilePicker.platform.pickFiles(
+                      withData: true,
+                    );
+                    if (result == null || result.files.isEmpty) return;
+
+                    final picked = result.files.first;
+                    setState(() {
+                      pickedFile = File(picked.path!);
+                    });
+                  },
                   child: Text(S.of(context).selectFile),
                 ),
               ],
@@ -93,7 +104,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
             const Spacer(),
             ElevatedButton(
               onPressed: () async {
-                if (srcFile == null ||
+                if (pickedFile == null ||
                     unlockAt == null ||
                     titleCtrl.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -106,14 +117,14 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                     title: titleCtrl.text,
                     unlockAtUtcMs: unlockAt!.millisecondsSinceEpoch,
                   );
-                  await repo.createCapsuleFromFile(srcFile!, params);
+                  await repo.createCapsuleFromFile(pickedFile!, params);
                   if (!mounted) return;
                   Navigator.of(context).pop();
                 } catch (e) {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${S.of(context).createFailed}: $e'),
+                      content: Text(S.of(context).createFailed(e.toString())),
                     ),
                   );
                 }

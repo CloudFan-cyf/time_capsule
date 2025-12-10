@@ -1,8 +1,8 @@
 import 'dart:io';
-import '../models/capsule.dart';
-import '../models/errors.dart';
-import '../services/crypto_service.dart';
-import '../services/time_service.dart';
+import 'models/capsule.dart';
+import 'models/errors.dart';
+import '../../../core/crypto/crypto_service.dart';
+import '../../../core/time/time_service.dart';
 
 abstract class CapsuleRepository {
   Future<List<Capsule>> listCapsules();

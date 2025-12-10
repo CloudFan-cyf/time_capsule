@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../repository/capsule_repository.dart';
-import '../../services/crypto_service.dart';
-import '../../services/time_service.dart';
+import '../../features/capsules/data/capsule_repository.dart';
+import '../../core/crypto/crypto_service.dart';
+import '../../core/time/time_service.dart';
 import 'create_capsule_page.dart';
-import '../../models/capsule.dart';
+import '../../features/capsules/data/models/capsule.dart';
 import 'package:time_capsule/generated/l10n.dart';
 
 class CapsuleListPage extends StatefulWidget {

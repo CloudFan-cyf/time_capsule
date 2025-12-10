@@ -4,6 +4,8 @@ import 'package:time_capsule/generated/l10n.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/capsule_list_page.dart';
 import 'pages/settings_page.dart';
+import 'package:time_capsule/providers/auxiliary/theme_manager.dart';
+import 'package:time_capsule/providers/auxiliary/theme_scope.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -83,7 +85,24 @@ class _AppShellState extends State<AppShell> {
     final showFab = (_index == 0 || _index == 1);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.appTitle)),
+      appBar: AppBar(
+        title: Text(l10n.appTitle),
+        actions: [
+          Builder(
+            builder: (context) {
+              final tm = ThemeScope.of(context);
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return IconButton(
+                icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
+                onPressed: () {
+                  // 切换为明/暗主题；再次点击可来回切换
+                  tm.themeMode = isDark ? ThemeMode.light : ThemeMode.dark;
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: useRail
           ? Row(
               children: [
