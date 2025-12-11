@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:time_capsule/core/storage/file_store.dart';
@@ -37,7 +38,7 @@ class CryptoServiceImpl implements CryptoService {
   ) async {
     // 占位：确保 device key 存在（后续加密会用）
     await fileStore.getOrCreateDeviceKey();
-
+    debugPrint('Device key ensured for capsule creation.');
     final id = _newId();
     final createdAtUtcMs = DateTime.now().toUtc().millisecondsSinceEpoch;
     final origFilename = p.basename(src.path);

@@ -24,5 +24,33 @@
     "navDashboard": "Dashboard",
     "navCapsules": "Capsules",
     "navSettings": "Settings",
+    "settingsSecurityTitle": "Security settings (placeholder)",
+    "settingsSecuritySubtitle": "Add master key management and time verification strategies later",
+    "settingsStorageTitle": "Capsule storage location",
+    "settingsStorageLoading": "Loading…",
+    "settingsStorageUsingDefault": "Using app private directory:\n{path}",
+    "@settingsStorageUsingDefault": {
+        "placeholders": {
+            "path": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsStorageUsingCustom": "Using custom directory:\n{path}",
+    "@settingsStorageUsingCustom": {
+        "placeholders": {
+            "path": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsPickDir": "Choose directory",
+    "settingsRestoreDefault": "Restore default",
+    "aboutTitle": "About",
+    "aboutSubtitle": "Time Capsule App · MVP",
+    "storageDirSet": "New capsule storage directory set",
+    "storageDirReset": "Restored to default storage directory",
+    "switchToLight": "Switch to light",
+    "switchToDark": "Switch to dark",
     "@@locale": "en"
 }

@@ -22,10 +22,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m0(error) => "创建失败：${error}";
 
-  static String m1(time) => "解锁时间：${time}";
+  static String m1(path) => "使用自定义目录：\n${path}";
+
+  static String m2(path) => "使用应用私有目录：\n${path}";
+
+  static String m3(time) => "解锁时间：${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "aboutSubtitle": MessageLookupByLibrary.simpleMessage("时光胶囊 App · MVP"),
+    "aboutTitle": MessageLookupByLibrary.simpleMessage("关于"),
     "appTitle": MessageLookupByLibrary.simpleMessage("时光胶囊"),
     "capsuleListTitle": MessageLookupByLibrary.simpleMessage("时光胶囊列表"),
     "capsuleName": MessageLookupByLibrary.simpleMessage("胶囊名称"),
@@ -34,22 +40,36 @@ class MessageLookup extends MessageLookupByLibrary {
     "createFailed": m0,
     "createPageTitle": MessageLookupByLibrary.simpleMessage("创建胶囊"),
     "dark": MessageLookupByLibrary.simpleMessage("深色"),
-    "dashboard": MessageLookupByLibrary.simpleMessage("Dashboard"),
+    "dashboard": MessageLookupByLibrary.simpleMessage("统计数据"),
     "decryptSuccess": MessageLookupByLibrary.simpleMessage("解密成功，准备预览"),
     "light": MessageLookupByLibrary.simpleMessage("浅色"),
     "locked": MessageLookupByLibrary.simpleMessage("未到期"),
     "navCapsules": MessageLookupByLibrary.simpleMessage("胶囊列表"),
-    "navDashboard": MessageLookupByLibrary.simpleMessage("Dashboard"),
+    "navDashboard": MessageLookupByLibrary.simpleMessage("统计数据"),
     "navSettings": MessageLookupByLibrary.simpleMessage("设置"),
     "openFailed": MessageLookupByLibrary.simpleMessage("打开失败"),
     "pleaseFillAll": MessageLookupByLibrary.simpleMessage("请完整填写信息"),
     "selectFile": MessageLookupByLibrary.simpleMessage("选择文件"),
     "selectUnlockTime": MessageLookupByLibrary.simpleMessage("请选择解锁时间"),
     "settings": MessageLookupByLibrary.simpleMessage("设置"),
+    "settingsPickDir": MessageLookupByLibrary.simpleMessage("选择目录"),
+    "settingsRestoreDefault": MessageLookupByLibrary.simpleMessage("恢复默认"),
+    "settingsSecuritySubtitle": MessageLookupByLibrary.simpleMessage(
+      "后续添加主密钥管理、校时策略等设置选项",
+    ),
+    "settingsSecurityTitle": MessageLookupByLibrary.simpleMessage("安全设置（占位）"),
+    "settingsStorageLoading": MessageLookupByLibrary.simpleMessage("加载中…"),
+    "settingsStorageTitle": MessageLookupByLibrary.simpleMessage("胶囊文件存储位置"),
+    "settingsStorageUsingCustom": m1,
+    "settingsStorageUsingDefault": m2,
+    "storageDirReset": MessageLookupByLibrary.simpleMessage("已恢复为默认存储目录"),
+    "storageDirSet": MessageLookupByLibrary.simpleMessage("已设置新的胶囊存储目录"),
+    "switchToDark": MessageLookupByLibrary.simpleMessage("切换到深色"),
+    "switchToLight": MessageLookupByLibrary.simpleMessage("切换到浅色"),
     "system": MessageLookupByLibrary.simpleMessage("跟随系统"),
     "theme": MessageLookupByLibrary.simpleMessage("主题"),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("总胶囊数"),
-    "unlockTime": m1,
+    "unlockTime": m3,
     "unlockable": MessageLookupByLibrary.simpleMessage("可解锁数"),
   };
 }

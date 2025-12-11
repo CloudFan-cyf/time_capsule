@@ -22,10 +22,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m0(error) => "Creation failed: ${error}";
 
-  static String m1(time) => "Unlock time: ${time}";
+  static String m1(path) => "Using custom directory:\n${path}";
+
+  static String m2(path) => "Using app private directory:\n${path}";
+
+  static String m3(time) => "Unlock time: ${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "aboutSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Time Capsule App · MVP",
+    ),
+    "aboutTitle": MessageLookupByLibrary.simpleMessage("About"),
     "appTitle": MessageLookupByLibrary.simpleMessage("Time Capsule"),
     "capsuleListTitle": MessageLookupByLibrary.simpleMessage("Capsule List"),
     "capsuleName": MessageLookupByLibrary.simpleMessage("Capsule Name"),
@@ -52,10 +60,34 @@ class MessageLookup extends MessageLookupByLibrary {
       "Select unlock time",
     ),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
+    "settingsPickDir": MessageLookupByLibrary.simpleMessage("Choose directory"),
+    "settingsRestoreDefault": MessageLookupByLibrary.simpleMessage(
+      "Restore default",
+    ),
+    "settingsSecuritySubtitle": MessageLookupByLibrary.simpleMessage(
+      "Add master key management and time verification strategies later",
+    ),
+    "settingsSecurityTitle": MessageLookupByLibrary.simpleMessage(
+      "Security settings (placeholder)",
+    ),
+    "settingsStorageLoading": MessageLookupByLibrary.simpleMessage("Loading…"),
+    "settingsStorageTitle": MessageLookupByLibrary.simpleMessage(
+      "Capsule storage location",
+    ),
+    "settingsStorageUsingCustom": m1,
+    "settingsStorageUsingDefault": m2,
+    "storageDirReset": MessageLookupByLibrary.simpleMessage(
+      "Restored to default storage directory",
+    ),
+    "storageDirSet": MessageLookupByLibrary.simpleMessage(
+      "New capsule storage directory set",
+    ),
+    "switchToDark": MessageLookupByLibrary.simpleMessage("Switch to dark"),
+    "switchToLight": MessageLookupByLibrary.simpleMessage("Switch to light"),
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "theme": MessageLookupByLibrary.simpleMessage("Theme"),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("Total Capsules"),
-    "unlockTime": m1,
+    "unlockTime": m3,
     "unlockable": MessageLookupByLibrary.simpleMessage("Unlockable"),
   };
 }

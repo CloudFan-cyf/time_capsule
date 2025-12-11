@@ -8,46 +8,48 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 abstract class FileStore {
-  /// App Support 目录（iOS/Android/desktop 都在沙盒内，适合放业务数据）
+  /// App Support 目录（App 私有数据根）
   Future<Directory> appSupportDir();
 
-  /// 临时目录（解密/占位打开时拷贝到这里，方便清理）
+  /// 临时目录（解密/预览用）
   Future<Directory> tempDir();
 
-  /// capsules 根目录：{appSupportDir}/capsules
+  /// 胶囊根目录：
+  /// - 默认：appSupportDir/capsules
+  /// - 若用户配置了自定义路径：直接用该路径
   Future<Directory> capsulesDir();
 
-  /// keys 目录：{appSupportDir}/keys
+  /// 仅用于密钥等敏感数据，仍固定在 App 私有目录
   Future<Directory> keysDir();
 
   /// 设备密钥文件：{appSupportDir}/keys/device_key.bin
   Future<File> deviceKeyFile();
 
-  /// 读取设备密钥（不存在则返回 null）
+  /// 读取设备密钥（不存在则 null）
   Future<Uint8List?> readDeviceKey();
 
-  /// 写设备密钥（原子写）
+  /// 写设备密钥
   Future<void> writeDeviceKey(Uint8List keyBytes);
 
-  /// 获取或生成设备密钥（默认 32 bytes）
+  /// 获取/生成设备密钥（默认 32 bytes）
   Future<Uint8List> getOrCreateDeviceKey({int length = 32});
 
   /// 确保某胶囊目录存在：{capsulesDir}/{capsuleId}
   Future<Directory> ensureCapsuleDir(String capsuleId);
 
-  /// payload.enc 的 File handle
+  /// payload.enc
   Future<File> payloadFile(String capsuleId);
 
-  /// manifest.json 的 File handle
+  /// manifest.json
   Future<File> manifestFile(String capsuleId);
 
-  /// 将源文件拷贝到 payload.enc（占位：不加密）
+  /// 将源文件拷贝到 payload.enc（占位：暂不加密）
   Future<File> copySourceToPayload({
     required String capsuleId,
     required File src,
   });
 
-  /// 写 manifest.json（原子写）
+  /// 写 manifest.json
   Future<File> writeManifest({
     required String capsuleId,
     required Map<String, Object?> manifest,
@@ -56,10 +58,10 @@ abstract class FileStore {
   /// 读 manifest.json
   Future<Map<String, Object?>> readManifest(File manifestFile);
 
-  /// 列出所有 manifest.json 文件（用于先不做 SQLite 时的 listCapsules）
+  /// 列出所有 manifest.json（用于 listCapsules）
   Future<List<File>> listAllManifestFiles();
 
-  /// 创建一个临时文件路径（不会自动写入）
+  /// 创建一个临时文件（不自动写入）
   Future<File> createTempFile({required String filename});
 
   /// 原子写文本
@@ -67,19 +69,29 @@ abstract class FileStore {
 
   /// 原子写字节
   Future<void> writeBytesAtomic(File file, List<int> bytes);
+
+  /// 读取“胶囊根目录”的自定义路径（无则 null）
+  Future<String?> getCapsulesRootOverridePath();
+
+  /// 设置/取消“胶囊根目录”的自定义路径（传 null 或空字符串 = 恢复默认）
+  Future<void> setCapsulesRootOverridePath(String? path);
 }
 
 class FileStoreImpl implements FileStore {
   static const String _capsulesFolder = 'capsules';
   static const String _keysFolder = 'keys';
   static const String _deviceKeyName = 'device_key.bin';
-  static const String _payloadName = 'payload.enc';
-  static const String _manifestName = 'manifest.json';
+
+  static const String _configFolder = 'config';
+  static const String _storageConfigName = 'storage.json';
+  static const String _cfgKeyCapsulesRootOverride = 'capsulesRootOverride';
 
   Directory? _support;
   Directory? _temp;
-  Directory? _capsules;
   Directory? _keys;
+  Directory? _configDir;
+
+  Map<String, Object?>? _config;
 
   @override
   Future<Directory> appSupportDir() async {
@@ -99,15 +111,90 @@ class FileStoreImpl implements FileStore {
     return _temp!;
   }
 
+  Future<Directory> _configDirEnsure() async {
+    if (_configDir != null) return _configDir!;
+    final base = await appSupportDir();
+    _configDir = Directory(p.join(base.path, _configFolder));
+    if (!await _configDir!.exists()) {
+      await _configDir!.create(recursive: true);
+    }
+    return _configDir!;
+  }
+
+  Future<File> _storageConfigFile() async {
+    final dir = await _configDirEnsure();
+    return File(p.join(dir.path, _storageConfigName));
+  }
+
+  Future<Map<String, Object?>> _loadConfig() async {
+    if (_config != null) return _config!;
+    final f = await _storageConfigFile();
+    if (!await f.exists()) {
+      _config = <String, Object?>{};
+      return _config!;
+    }
+    try {
+      final text = await f.readAsString();
+      final obj = jsonDecode(text);
+      if (obj is Map) {
+        _config = obj.map((k, v) => MapEntry(k.toString(), v));
+      } else {
+        _config = <String, Object?>{};
+      }
+    } catch (_) {
+      _config = <String, Object?>{};
+    }
+    return _config!;
+  }
+
+  Future<void> _saveConfig() async {
+    final cfg = _config ?? <String, Object?>{};
+    final f = await _storageConfigFile();
+    final text = const JsonEncoder.withIndent('  ').convert(cfg);
+    await writeStringAtomic(f, text);
+  }
+
+  @override
+  Future<String?> getCapsulesRootOverridePath() async {
+    final cfg = await _loadConfig();
+    final v = cfg[_cfgKeyCapsulesRootOverride];
+    if (v is String && v.trim().isNotEmpty) {
+      return v;
+    }
+    return null;
+  }
+
+  @override
+  Future<void> setCapsulesRootOverridePath(String? path) async {
+    final cfg = await _loadConfig();
+    if (path == null || path.trim().isEmpty) {
+      cfg.remove(_cfgKeyCapsulesRootOverride);
+    } else {
+      cfg[_cfgKeyCapsulesRootOverride] = path;
+    }
+    _config = cfg;
+    await _saveConfig();
+  }
+
   @override
   Future<Directory> capsulesDir() async {
-    if (_capsules != null) return _capsules!;
-    final base = await appSupportDir();
-    _capsules = Directory(p.join(base.path, _capsulesFolder));
-    if (!await _capsules!.exists()) {
-      await _capsules!.create(recursive: true);
+    // 若用户配置了自定义路径，优先使用
+    final override = await getCapsulesRootOverridePath();
+    if (override != null && override.isNotEmpty) {
+      final dir = Directory(override);
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      return dir;
     }
-    return _capsules!;
+
+    // 默认：App Support 下的 capsules
+    final base = await appSupportDir();
+    final dir = Directory(p.join(base.path, _capsulesFolder));
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    return dir;
   }
 
   @override
@@ -167,13 +254,13 @@ class FileStoreImpl implements FileStore {
   @override
   Future<File> payloadFile(String capsuleId) async {
     final dir = await ensureCapsuleDir(capsuleId);
-    return File(p.join(dir.path, _payloadName));
+    return File(p.join(dir.path, 'payload.enc'));
   }
 
   @override
   Future<File> manifestFile(String capsuleId) async {
     final dir = await ensureCapsuleDir(capsuleId);
-    return File(p.join(dir.path, _manifestName));
+    return File(p.join(dir.path, 'manifest.json'));
   }
 
   @override
@@ -182,11 +269,10 @@ class FileStoreImpl implements FileStore {
     required File src,
   }) async {
     final dst = await payloadFile(capsuleId);
-    // 覆盖写：先删再 copy，避免 copy 到已有文件报错/残留
     if (await dst.exists()) {
       await dst.delete();
     }
-    await src.copy(dst.path); // stream copy，适合大文件
+    await src.copy(dst.path);
     return dst;
   }
 
@@ -206,7 +292,7 @@ class FileStoreImpl implements FileStore {
     final text = await manifestFile.readAsString();
     final obj = jsonDecode(text);
     if (obj is! Map) {
-      throw FormatException('manifest is not a JSON object');
+      throw const FormatException('manifest is not a JSON object');
     }
     return obj.map((k, v) => MapEntry(k.toString(), v));
   }
@@ -219,7 +305,7 @@ class FileStoreImpl implements FileStore {
     final result = <File>[];
     await for (final ent in root.list(followLinks: false)) {
       if (ent is Directory) {
-        final mf = File(p.join(ent.path, _manifestName));
+        final mf = File(p.join(ent.path, 'manifest.json'));
         if (await mf.exists()) {
           result.add(mf);
         }
@@ -237,7 +323,6 @@ class FileStoreImpl implements FileStore {
   }
 
   String _sanitizeFilename(String name) {
-    // 简单安全处理：去掉路径分隔与非法字符
     final replaced = name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
     return replaced.isEmpty ? 'temp.bin' : replaced;
   }
@@ -263,7 +348,6 @@ class FileStoreImpl implements FileStore {
     }
     await tmp.writeAsBytes(bytes, flush: true);
 
-    // 原子替换：尽量 rename；失败则 copy+delete（Windows 某些情况下 rename 会失败）
     try {
       if (await file.exists()) {
         await file.delete();

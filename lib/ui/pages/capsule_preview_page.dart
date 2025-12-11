@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 
-import '../../features/capsules/data/models/capsule.dart';
+import 'package:time_capsule/features/capsules/data/models/capsule.dart';
 
 class CapsulePreviewPage extends StatefulWidget {
   final Capsule capsule;
@@ -74,7 +74,7 @@ class _CapsulePreviewPageState extends State<CapsulePreviewPage> {
         child: Center(
           child: Image.file(
             widget.file,
-            errorBuilder: (_, __, ___) => const Text('图片无法预览'),
+            errorBuilder: (_, _, _) => const Text('图片无法预览'),
           ),
         ),
       );

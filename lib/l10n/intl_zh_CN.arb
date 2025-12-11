@@ -1,6 +1,6 @@
 {
     "appTitle": "时光胶囊",
-    "dashboard": "Dashboard",
+    "dashboard": "统计数据",
     "capsules": "胶囊列表",
     "settings": "设置",
     "createCapsule": "创建胶囊",
@@ -21,8 +21,36 @@
     "light": "浅色",
     "dark": "深色",
     "system": "跟随系统",
-    "navDashboard": "Dashboard",
+    "navDashboard": "统计数据",
     "navCapsules": "胶囊列表",
     "navSettings": "设置",
+    "settingsSecurityTitle": "安全设置（占位）",
+    "settingsSecuritySubtitle": "后续添加主密钥管理、校时策略等设置选项",
+    "settingsStorageTitle": "胶囊文件存储位置",
+    "settingsStorageLoading": "加载中…",
+    "settingsStorageUsingDefault": "使用应用私有目录：\n{path}",
+    "@settingsStorageUsingDefault": {
+        "placeholders": {
+            "path": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsStorageUsingCustom": "使用自定义目录：\n{path}",
+    "@settingsStorageUsingCustom": {
+        "placeholders": {
+            "path": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsPickDir": "选择目录",
+    "settingsRestoreDefault": "恢复默认",
+    "aboutTitle": "关于",
+    "aboutSubtitle": "时光胶囊 App · MVP",
+    "storageDirSet": "已设置新的胶囊存储目录",
+    "storageDirReset": "已恢复为默认存储目录",
+    "switchToLight": "切换到浅色",
+    "switchToDark": "切换到深色",
     "@@locale": "zh_CN"
 }

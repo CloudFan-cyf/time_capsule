@@ -228,6 +228,141 @@ class S {
   String get navSettings {
     return Intl.message('Settings', name: 'navSettings', desc: '', args: []);
   }
+
+  /// `Security settings (placeholder)`
+  String get settingsSecurityTitle {
+    return Intl.message(
+      'Security settings (placeholder)',
+      name: 'settingsSecurityTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add master key management and time verification strategies later`
+  String get settingsSecuritySubtitle {
+    return Intl.message(
+      'Add master key management and time verification strategies later',
+      name: 'settingsSecuritySubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Capsule storage location`
+  String get settingsStorageTitle {
+    return Intl.message(
+      'Capsule storage location',
+      name: 'settingsStorageTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Loading…`
+  String get settingsStorageLoading {
+    return Intl.message(
+      'Loading…',
+      name: 'settingsStorageLoading',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Using app private directory:\n{path}`
+  String settingsStorageUsingDefault(String path) {
+    return Intl.message(
+      'Using app private directory:\n$path',
+      name: 'settingsStorageUsingDefault',
+      desc: '',
+      args: [path],
+    );
+  }
+
+  /// `Using custom directory:\n{path}`
+  String settingsStorageUsingCustom(String path) {
+    return Intl.message(
+      'Using custom directory:\n$path',
+      name: 'settingsStorageUsingCustom',
+      desc: '',
+      args: [path],
+    );
+  }
+
+  /// `Choose directory`
+  String get settingsPickDir {
+    return Intl.message(
+      'Choose directory',
+      name: 'settingsPickDir',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Restore default`
+  String get settingsRestoreDefault {
+    return Intl.message(
+      'Restore default',
+      name: 'settingsRestoreDefault',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `About`
+  String get aboutTitle {
+    return Intl.message('About', name: 'aboutTitle', desc: '', args: []);
+  }
+
+  /// `Time Capsule App · MVP`
+  String get aboutSubtitle {
+    return Intl.message(
+      'Time Capsule App · MVP',
+      name: 'aboutSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New capsule storage directory set`
+  String get storageDirSet {
+    return Intl.message(
+      'New capsule storage directory set',
+      name: 'storageDirSet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Restored to default storage directory`
+  String get storageDirReset {
+    return Intl.message(
+      'Restored to default storage directory',
+      name: 'storageDirReset',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Switch to light`
+  String get switchToLight {
+    return Intl.message(
+      'Switch to light',
+      name: 'switchToLight',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Switch to dark`
+  String get switchToDark {
+    return Intl.message(
+      'Switch to dark',
+      name: 'switchToDark',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {
