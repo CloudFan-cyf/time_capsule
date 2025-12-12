@@ -12,6 +12,7 @@ dependencies:
   http: ^1.2.0
   ntp: ^2.0.0
   crypto: ^3.0.3
+  flutter_secure_storage: ^9.0.0
   sqflite: ^2.3.3
   path_provider: ^2.1.4
   flutter_localizations:

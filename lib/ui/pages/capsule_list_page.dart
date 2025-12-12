@@ -73,21 +73,17 @@ class _CapsuleListPageState extends State<CapsuleListPage> {
 
     if (!mounted) return;
 
-    if (res.opened && res.decryptedFile != null) {
-      final file = res.decryptedFile!;
-      // 进入预览页（关闭时会自动删除临时文件，见 PreviewPage 实现）
+    if (res.opened && res.files.isNotEmpty) {
       await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) =>
-              CapsulePreviewPage(capsule: c, file: file, deleteOnClose: true),
+          builder: (_) => CapsulePreviewPage(capsule: c, files: res.files),
         ),
       );
-      return;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res.error?.message ?? S.of(context).openFailed)),
+      );
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(res.error?.message ?? S.of(context).openFailed)),
-    );
   }
 
   @override

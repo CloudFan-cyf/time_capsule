@@ -10,15 +10,26 @@ import 'package:time_capsule/core/storage/file_store.dart';
 
 abstract class CapsuleRepository {
   Future<List<Capsule>> listCapsules();
+
+  /// 旧版单文件创建（兼容）
   Future<Capsule> createCapsuleFromFile(File src, CapsuleParams params);
+
+  /// 新版多文件创建
+  Future<Capsule> createCapsuleFromFiles(
+    List<File> srcFiles,
+    CapsuleParams params,
+  );
   Future<OpenResult> openCapsule(Capsule capsule);
 }
 
 class OpenResult {
   final bool opened;
-  final File? decryptedFile;
+  final List<File> files;
   final TimeCapsuleError? error;
-  OpenResult({required this.opened, this.decryptedFile, this.error});
+
+  File? get firstFile => files.isNotEmpty ? files.first : null;
+
+  OpenResult({required this.opened, required this.files, this.error});
 }
 
 class CapsuleRepositoryImpl implements CapsuleRepository {
@@ -109,7 +120,17 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
   @override
   Future<Capsule> createCapsuleFromFile(File src, CapsuleParams params) async {
     final res = await cryptoService.createCapsuleFromFile(src, params);
-    // TODO: persist to SQLite（后续实现）
+    // TODO: persist to SQLite
+    return res.capsule;
+  }
+
+  @override
+  Future<Capsule> createCapsuleFromFiles(
+    List<File> srcFiles,
+    CapsuleParams params,
+  ) async {
+    final res = await cryptoService.createCapsuleFromFiles(srcFiles, params);
+    // TODO: persist to SQLite
     return res.capsule;
   }
 
@@ -119,20 +140,28 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
     if (!ok) {
       return OpenResult(
         opened: false,
+        files: const [],
         error: TimeCapsuleError('LOCKED', '未到解锁时间'),
       );
     }
-    final payload = File(capsule.encPath);
+
     final manifest = File(capsule.manifestPath);
     try {
-      final file = await cryptoService.decryptCapsuleToTemp(
-        payloadFile: payload,
+      final files = await cryptoService.ensureDecryptedFiles(
         manifestFile: manifest,
       );
-      return OpenResult(opened: true, decryptedFile: file);
+      if (files.isEmpty) {
+        return OpenResult(
+          opened: false,
+          files: const [],
+          error: TimeCapsuleError('NO_FILES', '胶囊中没有可解密的文件'),
+        );
+      }
+      return OpenResult(opened: true, files: files);
     } catch (e) {
       return OpenResult(
         opened: false,
+        files: const [],
         error: TimeCapsuleError('DECRYPT_FAIL', e.toString()),
       );
     }

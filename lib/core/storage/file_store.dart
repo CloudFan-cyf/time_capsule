@@ -75,9 +75,20 @@ abstract class FileStore {
 
   /// 设置/取消“胶囊根目录”的自定义路径（传 null 或空字符串 = 恢复默认）
   Future<void> setCapsulesRootOverridePath(String? path);
+
+  /// 主密钥 blob 文件
+  Future<File> masterKeyBlobFile();
+
+  /// 读取主密钥 blob（不存在则 null）
+  Future<Uint8List?> readMasterKeyBlob();
+
+  /// 写主密钥 blob
+  Future<void> writeMasterKeyBlob(Uint8List blob);
 }
 
 class FileStoreImpl implements FileStore {
+  static const String _masterKeyBlobName = 'master_key_blob.json';
+
   static const String _capsulesFolder = 'capsules';
   static const String _keysFolder = 'keys';
   static const String _deviceKeyName = 'device_key.bin';
@@ -359,5 +370,25 @@ class FileStoreImpl implements FileStore {
         await tmp.delete();
       } catch (_) {}
     }
+  }
+
+  @override
+  Future<File> masterKeyBlobFile() async {
+    final dir = await keysDir();
+    return File(p.join(dir.path, _masterKeyBlobName));
+  }
+
+  @override
+  Future<Uint8List?> readMasterKeyBlob() async {
+    final f = await masterKeyBlobFile();
+    if (!await f.exists()) return null;
+    final bytes = await f.readAsBytes();
+    return Uint8List.fromList(bytes);
+  }
+
+  @override
+  Future<void> writeMasterKeyBlob(Uint8List blob) async {
+    final f = await masterKeyBlobFile();
+    await writeBytesAtomic(f, blob);
   }
 }

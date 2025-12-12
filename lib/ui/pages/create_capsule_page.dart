@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../../features/capsules/data/capsule_repository.dart';
-import '../../core/crypto/crypto_service.dart';
-import '../../core/time/time_service.dart';
-import '../../features/capsules/data/models/capsule.dart';
-import 'package:time_capsule/generated/l10n.dart';
+
 import 'package:time_capsule/core/storage/file_store.dart';
+import 'package:time_capsule/core/crypto/crypto_service.dart';
+import 'package:time_capsule/core/time/time_service.dart';
 import 'package:time_capsule/features/capsules/data/capsule_events.dart';
+import 'package:time_capsule/features/capsules/data/capsule_repository.dart';
+import 'package:time_capsule/features/capsules/data/models/capsule.dart';
+import 'package:time_capsule/generated/l10n.dart';
 
 class CreateCapsulePage extends StatefulWidget {
   const CreateCapsulePage({super.key});
@@ -19,7 +20,8 @@ class CreateCapsulePage extends StatefulWidget {
 class _CreateCapsulePageState extends State<CreateCapsulePage> {
   final titleCtrl = TextEditingController();
   DateTime? unlockAt;
-  File? pickedFile; // TODO: integrate a file picker later
+  List<File> pickedFiles = [];
+
   late final CapsuleRepository repo;
 
   @override
@@ -29,20 +31,23 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
     repo = CapsuleRepositoryImpl(
       cryptoService: CryptoServiceImpl(fileStore: fs),
       timeService: TimeServiceImpl(),
+      fileStore: fs,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = S.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: Text(S.of(context).createCapsule)),
+      appBar: AppBar(title: Text(l10n.createCapsule)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
               controller: titleCtrl,
-              decoration: InputDecoration(labelText: S.of(context).capsuleName),
+              decoration: InputDecoration(labelText: l10n.capsuleName),
             ),
             const SizedBox(height: 12),
             Row(
@@ -50,8 +55,8 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                 Expanded(
                   child: Text(
                     unlockAt == null
-                        ? S.of(context).selectUnlockTime
-                        : S.of(context).unlockTime(unlockAt!.toLocal()),
+                        ? l10n.selectUnlockTime
+                        : l10n.unlockTime(unlockAt!.toLocal()),
                   ),
                 ),
                 TextButton(
@@ -78,7 +83,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                       setState(() => unlockAt = dt.toUtc());
                     }
                   },
-                  child: Text(S.of(context).selectUnlockTime),
+                  child: Text(l10n.selectUnlockTime),
                 ),
               ],
             ),
@@ -86,33 +91,43 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
             Row(
               children: [
                 Expanded(
-                  child: Text(pickedFile?.path ?? S.of(context).selectFile),
+                  child: Text(
+                    pickedFiles.isEmpty
+                        ? l10n.selectFile
+                        : '已选择 ${pickedFiles.length} 个文件',
+                  ),
                 ),
                 TextButton(
                   onPressed: () async {
                     final result = await FilePicker.platform.pickFiles(
                       withData: false,
+                      allowMultiple: true,
                     );
                     if (result == null || result.files.isEmpty) return;
 
-                    final picked = result.files.first;
+                    final files = result.files
+                        .where((f) => f.path != null)
+                        .map((f) => File(f.path!))
+                        .toList();
+                    if (files.isEmpty) return;
+
                     setState(() {
-                      pickedFile = File(picked.path!);
+                      pickedFiles = files;
                     });
                   },
-                  child: Text(S.of(context).selectFile),
+                  child: Text(l10n.selectFile),
                 ),
               ],
             ),
             const Spacer(),
             ElevatedButton(
               onPressed: () async {
-                if (pickedFile == null ||
+                if (pickedFiles.isEmpty ||
                     unlockAt == null ||
                     titleCtrl.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(S.of(context).pleaseFillAll)),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(l10n.pleaseFillAll)));
                   return;
                 }
                 try {
@@ -120,20 +135,18 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                     title: titleCtrl.text,
                     unlockAtUtcMs: unlockAt!.millisecondsSinceEpoch,
                   );
-                  await repo.createCapsuleFromFile(pickedFile!, params);
+                  await repo.createCapsuleFromFiles(pickedFiles, params);
                   notifyCapsulesChanged();
                   if (!mounted) return;
                   Navigator.of(context).pop();
                 } catch (e) {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(S.of(context).createFailed(e.toString())),
-                    ),
+                    SnackBar(content: Text(l10n.createFailed(e.toString()))),
                   );
                 }
               },
-              child: Text(S.of(context).createCapsule),
+              child: Text(l10n.createCapsule),
             ),
           ],
         ),

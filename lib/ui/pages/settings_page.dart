@@ -1,8 +1,13 @@
 // lib/ui/pages/settings_page.dart
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p show join;
 
 import 'package:time_capsule/core/storage/file_store.dart';
+import 'package:time_capsule/core/storage/secure_key_store.dart';
+import 'package:time_capsule/core/crypto/master_key_service.dart';
 import 'package:time_capsule/generated/l10n.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -13,7 +18,8 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final FileStore _fileStore = FileStoreImpl();
+  late final FileStore _fileStore;
+  late final MasterKeyService _masterKeyService;
 
   bool _loadingPath = true;
   bool _usingDefault = true;
@@ -22,6 +28,11 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    _fileStore = FileStoreImpl();
+    _masterKeyService = MasterKeyService(
+      secureKeyStore: SecureKeyStoreImpl(),
+      fileStore: _fileStore,
+    );
     _loadCurrentPath();
   }
 
@@ -68,6 +79,54 @@ class _SettingsPageState extends State<SettingsPage> {
     await _loadCurrentPath();
   }
 
+  Future<void> _exportMasterKey() async {
+    try {
+      final dirPath = await FilePicker.platform.getDirectoryPath();
+      if (dirPath == null) return;
+
+      final file = File(p.join(dirPath, 'time_capsule_master_key.json'));
+      await _masterKeyService.exportUmkToFile(file);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('主密钥已导出到：${file.path}')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('导出主密钥失败：$e')));
+    }
+  }
+
+  Future<void> _importMasterKey() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        withData: false,
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final path = result.files.single.path;
+      if (path == null) {
+        throw Exception('选中的文件没有路径');
+      }
+
+      final file = File(path);
+      await _masterKeyService.importUmkFromFile(file);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('导入主密钥成功')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('导入主密钥失败：$e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = S.of(context);
@@ -84,6 +143,18 @@ class _SettingsPageState extends State<SettingsPage> {
           leading: const Icon(Icons.security),
           title: Text(l10n.settingsSecurityTitle),
           subtitle: Text(l10n.settingsSecuritySubtitle),
+        ),
+        ListTile(
+          leading: const Icon(Icons.key),
+          title: const Text('导出主密钥'),
+          subtitle: const Text('生成可在其他设备导入的主密钥文件'),
+          onTap: _exportMasterKey,
+        ),
+        ListTile(
+          leading: const Icon(Icons.download),
+          title: const Text('导入主密钥'),
+          subtitle: const Text('从导出的主密钥文件恢复访问权限'),
+          onTap: _importMasterKey,
         ),
         const Divider(),
         ListTile(
