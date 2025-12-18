@@ -56,6 +56,46 @@
     "exportMasterKeyHint": "Exporting the master key can be used on other devices",
     "exportSuccess": "Master key exported successfully",
     "exportFailed": "Master key export failed: {error}",
+    "timeStatusTitle": "Network time status",
+    "timeStatusSubtitle": "Source: {source}\nCurrent time: {now}\nLast sync: {last}",
+    "@timeStatusSubtitle": {
+        "placeholders": {
+            "source": {
+                "type": "String"
+            },
+            "now": {
+                "type": "String"
+            },
+            "last": {
+                "type": "String"
+            }
+        }
+    },
+    "timeStatusSubtitleWithError": "Source: {source}\nCurrent time: {now}\nLast sync: {last}\nError: {error}",
+    "@timeStatusSubtitleWithError": {
+        "placeholders": {
+            "source": {
+                "type": "String"
+            },
+            "now": {
+                "type": "String"
+            },
+            "last": {
+                "type": "String"
+            },
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "notSynced": "Not synced",
+    "exportMasterKey": "Export Master Key",
+    "exportMasterKeyDesc": "Export a master key file that can be imported on other devices",
+    "importMasterKey": "Import Master Key",
+    "importMasterKeyDesc": "Restore access from an exported master key file",
+    "importSuccess": "Master key imported successfully",
+    "importFailed": "Master key import failed: {error}",
+    "shareExportText": "TimeCapsule Master Key Export",
     "DeleteCapsuleConfirmation": "Are you sure you want to delete the capsule \"{capsuleName}\"?",
     "Delete": "Delete",
     "Cancel": "Cancel",

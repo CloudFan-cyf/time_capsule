@@ -27,11 +27,19 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m2(error) => "Master key export failed: ${error}";
 
-  static String m3(path) => "Using custom directory:\n${path}";
+  static String m3(error) => "Master key import failed: ${error}";
 
-  static String m4(path) => "Using app private directory:\n${path}";
+  static String m4(path) => "Using custom directory:\n${path}";
 
-  static String m5(time) => "Unlock time: ${time}";
+  static String m5(path) => "Using app private directory:\n${path}";
+
+  static String m6(source, now, last) =>
+      "Source: ${source}\nCurrent time: ${now}\nLast sync: ${last}";
+
+  static String m7(source, now, last, error) =>
+      "Source: ${source}\nCurrent time: ${now}\nLast sync: ${last}\nError: ${error}";
+
+  static String m8(time) => "Unlock time: ${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -56,6 +64,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Decrypted successfully, preparing preview",
     ),
     "exportFailed": m2,
+    "exportMasterKey": MessageLookupByLibrary.simpleMessage(
+      "Export Master Key",
+    ),
+    "exportMasterKeyDesc": MessageLookupByLibrary.simpleMessage(
+      "Export a master key file that can be imported on other devices",
+    ),
     "exportMasterKeyHint": MessageLookupByLibrary.simpleMessage(
       "Exporting the master key can be used on other devices",
     ),
@@ -65,11 +79,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "exportSuccess": MessageLookupByLibrary.simpleMessage(
       "Master key exported successfully",
     ),
+    "importFailed": m3,
+    "importMasterKey": MessageLookupByLibrary.simpleMessage(
+      "Import Master Key",
+    ),
+    "importMasterKeyDesc": MessageLookupByLibrary.simpleMessage(
+      "Restore access from an exported master key file",
+    ),
+    "importSuccess": MessageLookupByLibrary.simpleMessage(
+      "Master key imported successfully",
+    ),
     "light": MessageLookupByLibrary.simpleMessage("Light"),
     "locked": MessageLookupByLibrary.simpleMessage("Locked"),
     "navCapsules": MessageLookupByLibrary.simpleMessage("Capsules"),
     "navDashboard": MessageLookupByLibrary.simpleMessage("Dashboard"),
     "navSettings": MessageLookupByLibrary.simpleMessage("Settings"),
+    "notSynced": MessageLookupByLibrary.simpleMessage("Not synced"),
     "openFailed": MessageLookupByLibrary.simpleMessage("Open failed"),
     "pleaseFillAll": MessageLookupByLibrary.simpleMessage(
       "Please fill all fields",
@@ -93,8 +118,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "settingsStorageTitle": MessageLookupByLibrary.simpleMessage(
       "Capsule storage location",
     ),
-    "settingsStorageUsingCustom": m3,
-    "settingsStorageUsingDefault": m4,
+    "settingsStorageUsingCustom": m4,
+    "settingsStorageUsingDefault": m5,
+    "shareExportText": MessageLookupByLibrary.simpleMessage(
+      "TimeCapsule Master Key Export",
+    ),
     "storageDirReset": MessageLookupByLibrary.simpleMessage(
       "Restored to default storage directory",
     ),
@@ -105,8 +133,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "switchToLight": MessageLookupByLibrary.simpleMessage("Switch to light"),
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "theme": MessageLookupByLibrary.simpleMessage("Theme"),
+    "timeStatusSubtitle": m6,
+    "timeStatusSubtitleWithError": m7,
+    "timeStatusTitle": MessageLookupByLibrary.simpleMessage(
+      "Network time status",
+    ),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("Total Capsules"),
-    "unlockTime": m5,
+    "unlockTime": m8,
     "unlockable": MessageLookupByLibrary.simpleMessage("Unlockable"),
   };
 }

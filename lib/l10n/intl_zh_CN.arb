@@ -47,15 +47,55 @@
     "settingsPickDir": "选择目录",
     "settingsRestoreDefault": "恢复默认",
     "aboutTitle": "关于",
-    "aboutSubtitle": "时光胶囊 App · MVP",
+    "aboutSubtitle": "时光胶囊 App · version 0.1",
     "storageDirSet": "已设置新的胶囊存储目录",
     "storageDirReset": "已恢复为默认存储目录",
     "switchToLight": "切换到浅色",
     "switchToDark": "切换到深色",
     "exportMasterKeyTitle": "导出主密钥",
-    "exportMasterKeyHint": "导出主密钥可用于在其他设备上",
+    "exportMasterKeyHint": "导出主密钥可用于在其他设备上恢复访问权限",
     "exportSuccess": "主密钥导出成功",
     "exportFailed": "主密钥导出失败：{error}",
+    "timeStatusTitle": "联网校时状态",
+    "timeStatusSubtitle": "来源：{source}\n当前时间：{now}\n上次同步：{last}",
+    "@timeStatusSubtitle": {
+        "placeholders": {
+            "source": {
+                "type": "String"
+            },
+            "now": {
+                "type": "String"
+            },
+            "last": {
+                "type": "String"
+            }
+        }
+    },
+    "timeStatusSubtitleWithError": "来源：{source}\n当前时间：{now}\n上次同步：{last}\n错误：{error}",
+    "@timeStatusSubtitleWithError": {
+        "placeholders": {
+            "source": {
+                "type": "String"
+            },
+            "now": {
+                "type": "String"
+            },
+            "last": {
+                "type": "String"
+            },
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "notSynced": "未同步",
+    "exportMasterKey": "导出主密钥",
+    "exportMasterKeyDesc": "导出可在其他设备导入的主密钥文件",
+    "importMasterKey": "导入主密钥",
+    "importMasterKeyDesc": "从导出的主密钥文件恢复访问权限",
+    "importSuccess": "导入主密钥成功",
+    "importFailed": "导入主密钥失败：{error}",
+    "shareExportText": "时光胶囊主密钥导出",
     "DeleteCapsuleConfirmation": "确定要删除胶囊“{capsuleName}”吗？",
     "Delete": "删除",
     "Cancel": "取消",

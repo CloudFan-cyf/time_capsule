@@ -94,10 +94,12 @@ class _SettingsPageState extends State<SettingsPage> {
     final nowLocal = _currentTrustedUtc().toLocal();
     final t = DateFormat('yyyy-MM-dd HH:mm:ss').format(nowLocal);
     final last = _lastSyncUtc == null
-        ? '未同步'
+        ? l10n.notSynced
         : DateFormat('HH:mm:ss').format(_lastSyncUtc!.toLocal());
-    final err = _timeErr == null ? '' : '\n错误：$_timeErr';
-    return '来源：$_timeSource\n当前时间：$t\n上次同步：$last$err';
+    if (_timeErr == null || _timeErr!.isEmpty) {
+      return l10n.timeStatusSubtitle(_timeSource, t, last);
+    }
+    return l10n.timeStatusSubtitleWithError(_timeSource, t, last, _timeErr!);
   }
 
   Future<void> _debugPrintKeyStoragePaths() async {
@@ -159,8 +161,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _exportMasterKey() async {
-    final l10n = S.of(context);
-
     try {
       final jsonText = await _masterKeyService.exportUmkJson();
 
@@ -175,7 +175,7 @@ class _SettingsPageState extends State<SettingsPage> {
         try {
           await Share.shareXFiles([
             XFile(tmpFile.path),
-          ], text: 'TimeCapsule Master Key Export');
+          ], text: l10n.shareExportText);
         } finally {
           // 尽力删除（不影响主流程）
           try {
@@ -232,16 +232,15 @@ class _SettingsPageState extends State<SettingsPage> {
       await _masterKeyService.importUmkFromFile(file);
 
       if (!mounted) return;
-      showSnack(context, '导入主密钥成功');
+      showSnack(context, l10n.importSuccess);
     } catch (e) {
       if (!mounted) return;
-      showSnack(context, '导入主密钥失败：$e');
+      showSnack(context, l10n.importFailed(e.toString()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = S.of(context);
     final storageSubtitle = _loadingPath
         ? l10n.settingsStorageLoading
         : _usingDefault
@@ -252,32 +251,27 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.all(16),
       children: [
         ListTile(
-          leading: const Icon(Icons.security),
-          title: Text(l10n.settingsSecurityTitle),
-          subtitle: Text(l10n.settingsSecuritySubtitle),
-        ),
-        ListTile(
           leading: const Icon(Icons.access_time),
-          title: const Text('联网校时状态'),
+          title: Text(l10n.timeStatusTitle),
           subtitle: Text(_timeSubtitle()),
           isThreeLine: true,
           trailing: IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: '刷新校时',
+            tooltip: l10n.Refresh,
             onPressed: _syncTime,
           ),
         ),
         const Divider(),
         ListTile(
           leading: const Icon(Icons.key),
-          title: const Text('导出主密钥'),
-          subtitle: const Text('导出可在其他设备导入的主密钥文件'),
+          title: Text(l10n.exportMasterKey),
+          subtitle: Text(l10n.exportMasterKeyDesc),
           onTap: _exportMasterKey,
         ),
         ListTile(
           leading: const Icon(Icons.download),
-          title: const Text('导入主密钥'),
-          subtitle: const Text('从导出的主密钥文件恢复访问权限'),
+          title: Text(l10n.importMasterKey),
+          subtitle: Text(l10n.importMasterKeyDesc),
           onTap: _importMasterKey,
         ),
         const Divider(),

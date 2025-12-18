@@ -404,6 +404,116 @@ class S {
     );
   }
 
+  /// `Network time status`
+  String get timeStatusTitle {
+    return Intl.message(
+      'Network time status',
+      name: 'timeStatusTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Source: {source}\nCurrent time: {now}\nLast sync: {last}`
+  String timeStatusSubtitle(String source, String now, String last) {
+    return Intl.message(
+      'Source: $source\nCurrent time: $now\nLast sync: $last',
+      name: 'timeStatusSubtitle',
+      desc: '',
+      args: [source, now, last],
+    );
+  }
+
+  /// `Source: {source}\nCurrent time: {now}\nLast sync: {last}\nError: {error}`
+  String timeStatusSubtitleWithError(
+    String source,
+    String now,
+    String last,
+    String error,
+  ) {
+    return Intl.message(
+      'Source: $source\nCurrent time: $now\nLast sync: $last\nError: $error',
+      name: 'timeStatusSubtitleWithError',
+      desc: '',
+      args: [source, now, last, error],
+    );
+  }
+
+  /// `Not synced`
+  String get notSynced {
+    return Intl.message('Not synced', name: 'notSynced', desc: '', args: []);
+  }
+
+  /// `Export Master Key`
+  String get exportMasterKey {
+    return Intl.message(
+      'Export Master Key',
+      name: 'exportMasterKey',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Export a master key file that can be imported on other devices`
+  String get exportMasterKeyDesc {
+    return Intl.message(
+      'Export a master key file that can be imported on other devices',
+      name: 'exportMasterKeyDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Import Master Key`
+  String get importMasterKey {
+    return Intl.message(
+      'Import Master Key',
+      name: 'importMasterKey',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Restore access from an exported master key file`
+  String get importMasterKeyDesc {
+    return Intl.message(
+      'Restore access from an exported master key file',
+      name: 'importMasterKeyDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Master key imported successfully`
+  String get importSuccess {
+    return Intl.message(
+      'Master key imported successfully',
+      name: 'importSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Master key import failed: {error}`
+  String importFailed(Object error) {
+    return Intl.message(
+      'Master key import failed: $error',
+      name: 'importFailed',
+      desc: '',
+      args: [error],
+    );
+  }
+
+  /// `TimeCapsule Master Key Export`
+  String get shareExportText {
+    return Intl.message(
+      'TimeCapsule Master Key Export',
+      name: 'shareExportText',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Are you sure you want to delete the capsule "{capsuleName}"?`
   String DeleteCapsuleConfirmation(Object capsuleName) {
     return Intl.message(
