@@ -178,9 +178,13 @@ jobs:
         run: |
           set -euo pipefail
           flutter build ios --release --no-codesign
-          mkdir -p dist
-          # 这里只能拿到 Runner.app（未签名），若要 .ipa 需证书/签名流程
-          (cd build/ios/iphoneos && ditto -c -k --sequesterRsrc --keepParent "Runner.app" "../../dist/app-${TAG}-ios-no-codesign.zip")
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          cd build/ios/iphoneos
+          ditto -c -k --sequesterRsrc --keepParent "Runner.app" "$GITHUB_WORKSPACE/dist/app-${TAG}-ios-no-codesign.zip"
+      - name: Debug dist
+        if: ${{ matrix.name == 'ios' }}
+        shell: bash
+        run: ls -lah "$GITHUB_WORKSPACE/dist"
 
       # ---------- Upload assets to Release ----------
       - name: Upload assets to GitHub Release
