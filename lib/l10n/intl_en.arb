@@ -56,5 +56,9 @@
     "exportMasterKeyHint": "Exporting the master key can be used on other devices",
     "exportSuccess": "Master key exported successfully",
     "exportFailed": "Master key export failed: {error}",
+    "DeleteCapsuleConfirmation": "Are you sure you want to delete the capsule \"{capsuleName}\"?",
+    "Delete": "Delete",
+    "Cancel": "Cancel",
+    "Refresh": "Refresh",
     "@@locale": "en"
 }

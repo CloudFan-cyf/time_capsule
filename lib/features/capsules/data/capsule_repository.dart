@@ -20,6 +20,8 @@ abstract class CapsuleRepository {
     CapsuleParams params,
   );
   Future<OpenResult> openCapsule(Capsule capsule);
+  Future<void> saveCustomOrder(List<String> orderedIds);
+  Future<void> deleteCapsule(Capsule capsule);
 }
 
 class OpenResult {
@@ -112,9 +114,34 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
       }
     }
 
-    // 按创建时间倒序展示
-    items.sort((a, b) => b.createdAtUtcMs.compareTo(a.createdAtUtcMs));
-    return items;
+    // ---------------- 应用用户自定义 order ----------------
+    final order = await fileStore.getCapsuleOrder(); // List<String>
+
+    // 建索引：id -> Capsule
+    final byId = <String, Capsule>{for (final c in items) c.id: c};
+
+    // 1) 先按 order 把能匹配到的取出来
+    final ordered = <Capsule>[];
+    final cleanedOrder = <String>[]; // 顺便清理掉不存在的 id，防止 order 越积越脏
+
+    for (final id in order) {
+      final c = byId.remove(id);
+      if (c != null) {
+        ordered.add(c);
+        cleanedOrder.add(id);
+      }
+    }
+
+    // 2) 剩余未在 order 中的胶囊，按创建时间倒序
+    final rest = byId.values.toList()
+      ..sort((a, b) => b.createdAtUtcMs.compareTo(a.createdAtUtcMs));
+
+    // 3) 可选：如果 order 被清理了（比如用户删了胶囊），回写一次
+    if (cleanedOrder.length != order.length) {
+      await fileStore.setCapsuleOrder(cleanedOrder);
+    }
+
+    return [...ordered, ...rest];
   }
 
   @override
@@ -165,5 +192,22 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
         error: TimeCapsuleError('DECRYPT_FAIL', e.toString()),
       );
     }
+  }
+
+  @override
+  Future<void> saveCustomOrder(List<String> orderedIds) async {
+    await fileStore.setCapsuleOrder(orderedIds);
+  }
+
+  @override
+  Future<void> deleteCapsule(Capsule capsule) async {
+    final dir = Directory(File(capsule.manifestPath).parent.path);
+    if (await dir.exists()) {
+      await dir.delete(recursive: true);
+    }
+    // 同时把顺序里删掉
+    final order = await fileStore.getCapsuleOrder();
+    order.remove(capsule.id);
+    await fileStore.setCapsuleOrder(order);
   }
 }

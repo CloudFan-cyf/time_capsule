@@ -20,18 +20,25 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(error) => "Creation failed: ${error}";
+  static String m0(capsuleName) =>
+      "Are you sure you want to delete the capsule \"${capsuleName}\"?";
 
-  static String m1(error) => "Master key export failed: ${error}";
+  static String m1(error) => "Creation failed: ${error}";
 
-  static String m2(path) => "Using custom directory:\n${path}";
+  static String m2(error) => "Master key export failed: ${error}";
 
-  static String m3(path) => "Using app private directory:\n${path}";
+  static String m3(path) => "Using custom directory:\n${path}";
 
-  static String m4(time) => "Unlock time: ${time}";
+  static String m4(path) => "Using app private directory:\n${path}";
+
+  static String m5(time) => "Unlock time: ${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "Delete": MessageLookupByLibrary.simpleMessage("Delete"),
+    "DeleteCapsuleConfirmation": m0,
+    "Refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
     "aboutSubtitle": MessageLookupByLibrary.simpleMessage(
       "Time Capsule App · MVP",
     ),
@@ -41,14 +48,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "capsuleName": MessageLookupByLibrary.simpleMessage("Capsule Name"),
     "capsules": MessageLookupByLibrary.simpleMessage("Capsules"),
     "createCapsule": MessageLookupByLibrary.simpleMessage("Create Capsule"),
-    "createFailed": m0,
+    "createFailed": m1,
     "createPageTitle": MessageLookupByLibrary.simpleMessage("Create Capsule"),
     "dark": MessageLookupByLibrary.simpleMessage("Dark"),
     "dashboard": MessageLookupByLibrary.simpleMessage("Dashboard"),
     "decryptSuccess": MessageLookupByLibrary.simpleMessage(
       "Decrypted successfully, preparing preview",
     ),
-    "exportFailed": m1,
+    "exportFailed": m2,
     "exportMasterKeyHint": MessageLookupByLibrary.simpleMessage(
       "Exporting the master key can be used on other devices",
     ),
@@ -86,8 +93,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "settingsStorageTitle": MessageLookupByLibrary.simpleMessage(
       "Capsule storage location",
     ),
-    "settingsStorageUsingCustom": m2,
-    "settingsStorageUsingDefault": m3,
+    "settingsStorageUsingCustom": m3,
+    "settingsStorageUsingDefault": m4,
     "storageDirReset": MessageLookupByLibrary.simpleMessage(
       "Restored to default storage directory",
     ),
@@ -99,7 +106,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "theme": MessageLookupByLibrary.simpleMessage("Theme"),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("Total Capsules"),
-    "unlockTime": m4,
+    "unlockTime": m5,
     "unlockable": MessageLookupByLibrary.simpleMessage("Unlockable"),
   };
 }

@@ -20,18 +20,24 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'zh_CN';
 
-  static String m0(error) => "创建失败：${error}";
+  static String m0(capsuleName) => "确定要删除胶囊“${capsuleName}”吗？";
 
-  static String m1(error) => "主密钥导出失败：${error}";
+  static String m1(error) => "创建失败：${error}";
 
-  static String m2(path) => "使用自定义目录：\n${path}";
+  static String m2(error) => "主密钥导出失败：${error}";
 
-  static String m3(path) => "使用应用私有目录：\n${path}";
+  static String m3(path) => "使用自定义目录：\n${path}";
 
-  static String m4(time) => "解锁时间：${time}";
+  static String m4(path) => "使用应用私有目录：\n${path}";
+
+  static String m5(time) => "解锁时间：${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "Cancel": MessageLookupByLibrary.simpleMessage("取消"),
+    "Delete": MessageLookupByLibrary.simpleMessage("删除"),
+    "DeleteCapsuleConfirmation": m0,
+    "Refresh": MessageLookupByLibrary.simpleMessage("刷新"),
     "aboutSubtitle": MessageLookupByLibrary.simpleMessage("时光胶囊 App · MVP"),
     "aboutTitle": MessageLookupByLibrary.simpleMessage("关于"),
     "appTitle": MessageLookupByLibrary.simpleMessage("时光胶囊"),
@@ -39,12 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "capsuleName": MessageLookupByLibrary.simpleMessage("胶囊名称"),
     "capsules": MessageLookupByLibrary.simpleMessage("胶囊列表"),
     "createCapsule": MessageLookupByLibrary.simpleMessage("创建胶囊"),
-    "createFailed": m0,
+    "createFailed": m1,
     "createPageTitle": MessageLookupByLibrary.simpleMessage("创建胶囊"),
     "dark": MessageLookupByLibrary.simpleMessage("深色"),
     "dashboard": MessageLookupByLibrary.simpleMessage("统计数据"),
     "decryptSuccess": MessageLookupByLibrary.simpleMessage("解密成功，准备预览"),
-    "exportFailed": m1,
+    "exportFailed": m2,
     "exportMasterKeyHint": MessageLookupByLibrary.simpleMessage(
       "导出主密钥可用于在其他设备上",
     ),
@@ -68,8 +74,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "settingsSecurityTitle": MessageLookupByLibrary.simpleMessage("安全设置（占位）"),
     "settingsStorageLoading": MessageLookupByLibrary.simpleMessage("加载中…"),
     "settingsStorageTitle": MessageLookupByLibrary.simpleMessage("胶囊文件存储位置"),
-    "settingsStorageUsingCustom": m2,
-    "settingsStorageUsingDefault": m3,
+    "settingsStorageUsingCustom": m3,
+    "settingsStorageUsingDefault": m4,
     "storageDirReset": MessageLookupByLibrary.simpleMessage("已恢复为默认存储目录"),
     "storageDirSet": MessageLookupByLibrary.simpleMessage("已设置新的胶囊存储目录"),
     "switchToDark": MessageLookupByLibrary.simpleMessage("切换到深色"),
@@ -77,7 +83,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "system": MessageLookupByLibrary.simpleMessage("跟随系统"),
     "theme": MessageLookupByLibrary.simpleMessage("主题"),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("总胶囊数"),
-    "unlockTime": m4,
+    "unlockTime": m5,
     "unlockable": MessageLookupByLibrary.simpleMessage("可解锁数"),
   };
 }

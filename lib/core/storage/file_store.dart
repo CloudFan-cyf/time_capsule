@@ -49,6 +49,9 @@ abstract class FileStore {
     required File src,
   });
 
+  Future<List<String>> getCapsuleOrder();
+  Future<void> setCapsuleOrder(List<String> ids);
+
   /// 写 manifest.json
   Future<File> writeManifest({
     required String capsuleId,
@@ -96,7 +99,7 @@ class FileStoreImpl implements FileStore {
   static const String _configFolder = 'config';
   static const String _storageConfigName = 'storage.json';
   static const String _cfgKeyCapsulesRootOverride = 'capsulesRootOverride';
-
+  static const String _cfgKeyCapsuleOrder = 'capsuleOrder';
   Directory? _support;
   Directory? _temp;
   Directory? _keys;
@@ -285,6 +288,24 @@ class FileStoreImpl implements FileStore {
     }
     await src.copy(dst.path);
     return dst;
+  }
+
+  @override
+  Future<List<String>> getCapsuleOrder() async {
+    final cfg = await _loadConfig();
+    final v = cfg[_cfgKeyCapsuleOrder];
+    if (v is List) {
+      return v.whereType<String>().toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<void> setCapsuleOrder(List<String> ids) async {
+    final cfg = await _loadConfig();
+    cfg[_cfgKeyCapsuleOrder] = ids;
+    _config = cfg;
+    await _saveConfig();
   }
 
   @override

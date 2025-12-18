@@ -56,5 +56,9 @@
     "exportMasterKeyHint": "导出主密钥可用于在其他设备上",
     "exportSuccess": "主密钥导出成功",
     "exportFailed": "主密钥导出失败：{error}",
+    "DeleteCapsuleConfirmation": "确定要删除胶囊“{capsuleName}”吗？",
+    "Delete": "删除",
+    "Cancel": "取消",
+    "Refresh": "刷新",
     "@@locale": "zh_CN"
 }

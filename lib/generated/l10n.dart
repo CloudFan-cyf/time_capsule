@@ -403,6 +403,31 @@ class S {
       args: [error],
     );
   }
+
+  /// `Are you sure you want to delete the capsule "{capsuleName}"?`
+  String DeleteCapsuleConfirmation(Object capsuleName) {
+    return Intl.message(
+      'Are you sure you want to delete the capsule "$capsuleName"?',
+      name: 'DeleteCapsuleConfirmation',
+      desc: '',
+      args: [capsuleName],
+    );
+  }
+
+  /// `Delete`
+  String get Delete {
+    return Intl.message('Delete', name: 'Delete', desc: '', args: []);
+  }
+
+  /// `Cancel`
+  String get Cancel {
+    return Intl.message('Cancel', name: 'Cancel', desc: '', args: []);
+  }
+
+  /// `Refresh`
+  String get Refresh {
+    return Intl.message('Refresh', name: 'Refresh', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {
