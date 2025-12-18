@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p show join;
 import 'package:share_plus/share_plus.dart';
 
@@ -12,6 +13,8 @@ import 'package:time_capsule/core/storage/secure_key_store.dart';
 import 'package:time_capsule/core/crypto/master_key_service.dart';
 import 'package:time_capsule/utlis/showsnackbar.dart';
 import 'package:time_capsule/generated/l10n.dart';
+import 'dart:async';
+import 'package:time_capsule/core/time/time_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -23,6 +26,13 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late final FileStore _fileStore;
   late final MasterKeyService _masterKeyService;
+  final TimeService _timeService = TimeServiceImpl();
+
+  Timer? _tick;
+  Duration? _offset;
+  String _timeSource = '...';
+  DateTime? _lastSyncUtc;
+  String? _timeErr;
   late final S l10n = S.of(context);
 
   bool _loadingPath = true;
@@ -38,9 +48,56 @@ class _SettingsPageState extends State<SettingsPage> {
       fileStore: _fileStore,
     );
     _loadCurrentPath();
+    _syncTime();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
     if (kDebugMode) {
       _debugPrintKeyStoragePaths();
     }
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _syncTime() async {
+    try {
+      final res = await _timeService.getTrustedNowUtc();
+      final localUtc = DateTime.now().toUtc();
+      if (!mounted) return;
+      setState(() {
+        _offset = res.nowUtc.difference(localUtc);
+        _timeSource = res.source;
+        _lastSyncUtc = DateTime.now().toUtc();
+        _timeErr = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _offset = null;
+        _timeSource = 'OFFLINE';
+        _lastSyncUtc = DateTime.now().toUtc();
+        _timeErr = e.toString();
+      });
+    }
+  }
+
+  DateTime _currentTrustedUtc() {
+    final nowUtc = DateTime.now().toUtc();
+    return _offset == null ? nowUtc : nowUtc.add(_offset!);
+  }
+
+  String _timeSubtitle() {
+    final nowLocal = _currentTrustedUtc().toLocal();
+    final t = DateFormat('yyyy-MM-dd HH:mm:ss').format(nowLocal);
+    final last = _lastSyncUtc == null
+        ? '未同步'
+        : DateFormat('HH:mm:ss').format(_lastSyncUtc!.toLocal());
+    final err = _timeErr == null ? '' : '\n错误：$_timeErr';
+    return '来源：$_timeSource\n当前时间：$t\n上次同步：$last$err';
   }
 
   Future<void> _debugPrintKeyStoragePaths() async {
@@ -199,6 +256,18 @@ class _SettingsPageState extends State<SettingsPage> {
           title: Text(l10n.settingsSecurityTitle),
           subtitle: Text(l10n.settingsSecuritySubtitle),
         ),
+        ListTile(
+          leading: const Icon(Icons.access_time),
+          title: const Text('联网校时状态'),
+          subtitle: Text(_timeSubtitle()),
+          isThreeLine: true,
+          trailing: IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: '刷新校时',
+            onPressed: _syncTime,
+          ),
+        ),
+        const Divider(),
         ListTile(
           leading: const Icon(Icons.key),
           title: const Text('导出主密钥'),
