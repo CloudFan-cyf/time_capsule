@@ -52,5 +52,9 @@
     "storageDirReset": "已恢复为默认存储目录",
     "switchToLight": "切换到浅色",
     "switchToDark": "切换到深色",
+    "exportMasterKeyTitle": "导出主密钥",
+    "exportMasterKeyHint": "导出主密钥可用于在其他设备上",
+    "exportSuccess": "主密钥导出成功",
+    "exportFailed": "主密钥导出失败：{error}",
     "@@locale": "zh_CN"
 }

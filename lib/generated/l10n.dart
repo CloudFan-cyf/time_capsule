@@ -363,6 +363,46 @@ class S {
       args: [],
     );
   }
+
+  /// `Export Master Key`
+  String get exportMasterKeyTitle {
+    return Intl.message(
+      'Export Master Key',
+      name: 'exportMasterKeyTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exporting the master key can be used on other devices`
+  String get exportMasterKeyHint {
+    return Intl.message(
+      'Exporting the master key can be used on other devices',
+      name: 'exportMasterKeyHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Master key exported successfully`
+  String get exportSuccess {
+    return Intl.message(
+      'Master key exported successfully',
+      name: 'exportSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Master key export failed: {error}`
+  String exportFailed(Object error) {
+    return Intl.message(
+      'Master key export failed: $error',
+      name: 'exportFailed',
+      desc: '',
+      args: [error],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

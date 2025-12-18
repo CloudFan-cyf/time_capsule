@@ -143,4 +143,15 @@ class MasterKeyService {
     final jsonBytes = utf8.encode(jsonEncode(map));
     return Uint8List.fromList(jsonBytes);
   }
+
+  /// 生成导出用的 JSON 文本（UI 决定写到哪里）
+  Future<String> exportUmkJson() async {
+    final umk = await getOrCreateUmk();
+    final payload = <String, Object?>{
+      'version': 1,
+      'createdAtUtcMs': DateTime.now().toUtc().millisecondsSinceEpoch,
+      'umkB64': base64Encode(umk),
+    };
+    return const JsonEncoder.withIndent('  ').convert(payload);
+  }
 }

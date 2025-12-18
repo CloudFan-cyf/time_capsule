@@ -2,12 +2,15 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p show join;
+import 'package:share_plus/share_plus.dart';
 
 import 'package:time_capsule/core/storage/file_store.dart';
 import 'package:time_capsule/core/storage/secure_key_store.dart';
 import 'package:time_capsule/core/crypto/master_key_service.dart';
+import 'package:time_capsule/utlis/showsnackbar.dart';
 import 'package:time_capsule/generated/l10n.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -20,6 +23,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late final FileStore _fileStore;
   late final MasterKeyService _masterKeyService;
+  late final S l10n = S.of(context);
 
   bool _loadingPath = true;
   bool _usingDefault = true;
@@ -34,6 +38,28 @@ class _SettingsPageState extends State<SettingsPage> {
       fileStore: _fileStore,
     );
     _loadCurrentPath();
+    if (kDebugMode) {
+      _debugPrintKeyStoragePaths();
+    }
+  }
+
+  Future<void> _debugPrintKeyStoragePaths() async {
+    try {
+      final support = await _fileStore.appSupportDir();
+      final keysDir = await _fileStore.keysDir();
+      final blobFile = await _fileStore.masterKeyBlobFile();
+
+      // 这些打印在 Android/Windows 都能看到
+      debugPrint('=== [TimeCapsule] Key storage debug ===');
+      debugPrint('Platform: ${Platform.operatingSystem}');
+      debugPrint('appSupportDir: ${support.path}');
+      debugPrint('keysDir: ${keysDir.path}');
+      debugPrint('masterKeyBlobFile: ${blobFile.path}');
+      debugPrint('======================================');
+    } catch (e, st) {
+      debugPrint('Key storage debug print failed: $e');
+      debugPrint('$st');
+    }
   }
 
   Future<void> _loadCurrentPath() async {
@@ -64,42 +90,71 @@ class _SettingsPageState extends State<SettingsPage> {
 
     await _fileStore.setCapsulesRootOverridePath(selectedDirectory);
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(content: Text(S.of(context).storageDirSet)),
-    );
+    showSnack(context, l10n.storageDirSet);
     await _loadCurrentPath();
   }
 
   Future<void> _resetCapsulesDir() async {
     await _fileStore.setCapsulesRootOverridePath(null);
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(content: Text(S.of(context).storageDirReset)),
-    );
+    showSnack(context, l10n.storageDirReset);
     await _loadCurrentPath();
   }
 
   Future<void> _exportMasterKey() async {
-    try {
-      final dirPath = await FilePicker.platform.getDirectoryPath();
-      if (dirPath == null) return;
+    final l10n = S.of(context);
 
-      final file = File(p.join(dirPath, 'time_capsule_master_key.json'));
-      await _masterKeyService.exportUmkToFile(file);
+    try {
+      final jsonText = await _masterKeyService.exportUmkJson();
+
+      if (Platform.isAndroid) {
+        // ✅ Android：写到临时目录 -> share -> finally 删除
+        final tmpDir = await _fileStore.tempDir();
+        final tmpPath = p.join(tmpDir.path, 'time_capsule_umk_key.json');
+        final tmpFile = File(tmpPath);
+
+        await tmpFile.writeAsString(jsonText, flush: true);
+
+        try {
+          await Share.shareXFiles([
+            XFile(tmpFile.path),
+          ], text: 'TimeCapsule Master Key Export');
+        } finally {
+          // 尽力删除（不影响主流程）
+          try {
+            if (await tmpFile.exists()) {
+              await tmpFile.delete();
+            }
+          } catch (_) {
+            if (kDebugMode) {
+              debugPrint(
+                'Failed to delete temporary master key file: $tmpPath',
+              );
+            }
+          }
+        }
+
+        if (!mounted) return;
+        showSnack(context, l10n.exportSuccess);
+        return;
+      }
+
+      // ✅ 其他平台：允许用户指定输出路径
+      final outPath = await FilePicker.platform.saveFile(
+        dialogTitle: l10n.exportMasterKeyTitle,
+        fileName: 'time_capsule_umk_key.json',
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+      );
+      if (outPath == null) return;
+
+      await File(outPath).writeAsString(jsonText, flush: true);
 
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.clearSnackBars();
-      messenger.showSnackBar(SnackBar(content: Text('主密钥已导出到：${file.path}')));
+      showSnack(context, l10n.exportSuccess);
     } catch (e) {
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.clearSnackBars();
-      messenger.showSnackBar(SnackBar(content: Text('导出主密钥失败：$e')));
+      showSnack(context, l10n.exportFailed(e.toString()));
     }
   }
 
@@ -120,14 +175,10 @@ class _SettingsPageState extends State<SettingsPage> {
       await _masterKeyService.importUmkFromFile(file);
 
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.clearSnackBars();
-      messenger.showSnackBar(const SnackBar(content: Text('导入主密钥成功')));
+      showSnack(context, '导入主密钥成功');
     } catch (e) {
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.clearSnackBars();
-      messenger.showSnackBar(SnackBar(content: Text('导入主密钥失败：$e')));
+      showSnack(context, '导入主密钥失败：$e');
     }
   }
 
@@ -151,7 +202,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.key),
           title: const Text('导出主密钥'),
-          subtitle: const Text('生成可在其他设备导入的主密钥文件'),
+          subtitle: const Text('导出可在其他设备导入的主密钥文件'),
           onTap: _exportMasterKey,
         ),
         ListTile(

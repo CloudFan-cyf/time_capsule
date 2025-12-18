@@ -9,6 +9,7 @@ import 'package:time_capsule/features/capsules/data/capsule_events.dart';
 import 'package:time_capsule/features/capsules/data/capsule_repository.dart';
 import 'package:time_capsule/features/capsules/data/models/capsule.dart';
 import 'package:time_capsule/generated/l10n.dart';
+import 'package:time_capsule/utlis/showsnackbar.dart';
 
 class CreateCapsulePage extends StatefulWidget {
   const CreateCapsulePage({super.key});
@@ -143,11 +144,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                   Navigator.of(context).pop();
                 } catch (e) {
                   if (!mounted) return;
-                  final messenger = ScaffoldMessenger.of(context);
-                  messenger.clearSnackBars();
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(l10n.createFailed(e.toString()))),
-                  );
+                  showSnack(context, l10n.createFailed(e.toString()));
                 }
               },
               child: Text(l10n.createCapsule),

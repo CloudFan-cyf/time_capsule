@@ -52,5 +52,9 @@
     "storageDirReset": "Restored to default storage directory",
     "switchToLight": "Switch to light",
     "switchToDark": "Switch to dark",
+    "exportMasterKeyTitle": "Export Master Key",
+    "exportMasterKeyHint": "Exporting the master key can be used on other devices",
+    "exportSuccess": "Master key exported successfully",
+    "exportFailed": "Master key export failed: {error}",
     "@@locale": "en"
 }

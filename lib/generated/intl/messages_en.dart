@@ -22,11 +22,13 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m0(error) => "Creation failed: ${error}";
 
-  static String m1(path) => "Using custom directory:\n${path}";
+  static String m1(error) => "Master key export failed: ${error}";
 
-  static String m2(path) => "Using app private directory:\n${path}";
+  static String m2(path) => "Using custom directory:\n${path}";
 
-  static String m3(time) => "Unlock time: ${time}";
+  static String m3(path) => "Using app private directory:\n${path}";
+
+  static String m4(time) => "Unlock time: ${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -45,6 +47,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "dashboard": MessageLookupByLibrary.simpleMessage("Dashboard"),
     "decryptSuccess": MessageLookupByLibrary.simpleMessage(
       "Decrypted successfully, preparing preview",
+    ),
+    "exportFailed": m1,
+    "exportMasterKeyHint": MessageLookupByLibrary.simpleMessage(
+      "Exporting the master key can be used on other devices",
+    ),
+    "exportMasterKeyTitle": MessageLookupByLibrary.simpleMessage(
+      "Export Master Key",
+    ),
+    "exportSuccess": MessageLookupByLibrary.simpleMessage(
+      "Master key exported successfully",
     ),
     "light": MessageLookupByLibrary.simpleMessage("Light"),
     "locked": MessageLookupByLibrary.simpleMessage("Locked"),
@@ -74,8 +86,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "settingsStorageTitle": MessageLookupByLibrary.simpleMessage(
       "Capsule storage location",
     ),
-    "settingsStorageUsingCustom": m1,
-    "settingsStorageUsingDefault": m2,
+    "settingsStorageUsingCustom": m2,
+    "settingsStorageUsingDefault": m3,
     "storageDirReset": MessageLookupByLibrary.simpleMessage(
       "Restored to default storage directory",
     ),
@@ -87,7 +99,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "theme": MessageLookupByLibrary.simpleMessage("Theme"),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("Total Capsules"),
-    "unlockTime": m3,
+    "unlockTime": m4,
     "unlockable": MessageLookupByLibrary.simpleMessage("Unlockable"),
   };
 }
