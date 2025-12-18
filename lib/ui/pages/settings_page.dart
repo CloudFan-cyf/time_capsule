@@ -64,18 +64,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
     await _fileStore.setCapsulesRootOverridePath(selectedDirectory);
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(S.of(context).storageDirSet)));
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(content: Text(S.of(context).storageDirSet)),
+    );
     await _loadCurrentPath();
   }
 
   Future<void> _resetCapsulesDir() async {
     await _fileStore.setCapsulesRootOverridePath(null);
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(S.of(context).storageDirReset)));
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(content: Text(S.of(context).storageDirReset)),
+    );
     await _loadCurrentPath();
   }
 
@@ -88,14 +92,14 @@ class _SettingsPageState extends State<SettingsPage> {
       await _masterKeyService.exportUmkToFile(file);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('主密钥已导出到：${file.path}')));
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
+      messenger.showSnackBar(SnackBar(content: Text('主密钥已导出到：${file.path}')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('导出主密钥失败：$e')));
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
+      messenger.showSnackBar(SnackBar(content: Text('导出主密钥失败：$e')));
     }
   }
 
@@ -116,14 +120,14 @@ class _SettingsPageState extends State<SettingsPage> {
       await _masterKeyService.importUmkFromFile(file);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('导入主密钥成功')));
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
+      messenger.showSnackBar(const SnackBar(content: Text('导入主密钥成功')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('导入主密钥失败：$e')));
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
+      messenger.showSnackBar(SnackBar(content: Text('导入主密钥失败：$e')));
     }
   }
 

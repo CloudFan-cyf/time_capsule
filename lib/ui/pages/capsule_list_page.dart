@@ -80,7 +80,10 @@ class _CapsuleListPageState extends State<CapsuleListPage> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      // 先清空当前和队列中的 Snackbar，避免快速点击导致堆积
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
         SnackBar(content: Text(res.error?.message ?? S.of(context).openFailed)),
       );
     }

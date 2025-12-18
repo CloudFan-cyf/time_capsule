@@ -125,9 +125,11 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                 if (pickedFiles.isEmpty ||
                     unlockAt == null ||
                     titleCtrl.text.isEmpty) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(l10n.pleaseFillAll)));
+                  final messenger = ScaffoldMessenger.of(context);
+                  messenger.clearSnackBars();
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.pleaseFillAll)),
+                  );
                   return;
                 }
                 try {
@@ -141,7 +143,9 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                   Navigator.of(context).pop();
                 } catch (e) {
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  final messenger = ScaffoldMessenger.of(context);
+                  messenger.clearSnackBars();
+                  messenger.showSnackBar(
                     SnackBar(content: Text(l10n.createFailed(e.toString()))),
                   );
                 }
