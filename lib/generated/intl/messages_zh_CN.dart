@@ -32,13 +32,22 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(path) => "使用应用私有目录：\n${path}";
 
-  static String m6(source, now, last) =>
+  static String m6(seconds) => "时间已在 ${seconds} 秒前同步";
+
+  static String m7(seconds) => "请在 ${seconds} 秒后再刷新";
+
+  static String m8(source, now, last) =>
       "来源：${source}\n当前时间：${now}\n上次同步：${last}";
 
-  static String m7(source, now, last, error) =>
+  static String m9(source, time, ago) => "${source}\n当前：${time}\n${ago}";
+
+  static String m10(source, time, ago, err) =>
+      "${source}\n当前：${time}\n${ago}\n错误：${err}";
+
+  static String m11(source, now, last, error) =>
       "来源：${source}\n当前时间：${now}\n上次同步：${last}\n错误：${error}";
 
-  static String m8(time) => "解锁时间：${time}";
+  static String m12(time) => "解锁时间：${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -46,10 +55,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "Delete": MessageLookupByLibrary.simpleMessage("删除"),
     "DeleteCapsuleConfirmation": m0,
     "Refresh": MessageLookupByLibrary.simpleMessage("刷新"),
+    "aboutIntro": MessageLookupByLibrary.simpleMessage("加密保存文件，到期才能查看"),
+    "aboutPrivacyHint": MessageLookupByLibrary.simpleMessage(
+      "隐私说明：内容默认仅存储在本机；导出主密钥可用于更换设备迁移解锁。",
+    ),
     "aboutSubtitle": MessageLookupByLibrary.simpleMessage(
       "时光胶囊 App · version 0.1",
     ),
     "aboutTitle": MessageLookupByLibrary.simpleMessage("关于"),
+    "appName": MessageLookupByLibrary.simpleMessage("时光胶囊·Time Capsule"),
     "appTitle": MessageLookupByLibrary.simpleMessage("时光胶囊"),
     "capsuleListTitle": MessageLookupByLibrary.simpleMessage("时光胶囊列表"),
     "capsuleName": MessageLookupByLibrary.simpleMessage("胶囊名称"),
@@ -83,6 +97,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "navSettings": MessageLookupByLibrary.simpleMessage("设置"),
     "notSynced": MessageLookupByLibrary.simpleMessage("未同步"),
     "openFailed": MessageLookupByLibrary.simpleMessage("打开失败"),
+    "openSourceLicenses": MessageLookupByLibrary.simpleMessage("开源许可证"),
     "pleaseFillAll": MessageLookupByLibrary.simpleMessage("请完整填写信息"),
     "selectFile": MessageLookupByLibrary.simpleMessage("选择文件"),
     "selectUnlockTime": MessageLookupByLibrary.simpleMessage("请选择解锁时间"),
@@ -102,13 +117,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "storageDirSet": MessageLookupByLibrary.simpleMessage("已设置新的胶囊存储目录"),
     "switchToDark": MessageLookupByLibrary.simpleMessage("切换到深色"),
     "switchToLight": MessageLookupByLibrary.simpleMessage("切换到浅色"),
+    "syncedSecondsAgo": m6,
     "system": MessageLookupByLibrary.simpleMessage("跟随系统"),
     "theme": MessageLookupByLibrary.simpleMessage("主题"),
-    "timeStatusSubtitle": m6,
-    "timeStatusSubtitleWithError": m7,
+    "timeRefreshCooldown": m7,
+    "timeStatusSubtitle": m8,
+    "timeStatusSubtitleWithAgo": m9,
+    "timeStatusSubtitleWithAgoAndError": m10,
+    "timeStatusSubtitleWithError": m11,
     "timeStatusTitle": MessageLookupByLibrary.simpleMessage("联网校时状态"),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("总胶囊数"),
-    "unlockTime": m8,
+    "unlockTime": m12,
     "unlockable": MessageLookupByLibrary.simpleMessage("可解锁数"),
+    "version": MessageLookupByLibrary.simpleMessage("版本："),
   };
 }
