@@ -55,10 +55,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "Delete": MessageLookupByLibrary.simpleMessage("删除"),
     "DeleteCapsuleConfirmation": m0,
     "Refresh": MessageLookupByLibrary.simpleMessage("刷新"),
+    "aboutIntro": MessageLookupByLibrary.simpleMessage("加密保存文件，到期才能查看"),
+    "aboutPrivacyHint": MessageLookupByLibrary.simpleMessage(
+      "隐私说明：内容默认仅存储在本机；导出主密钥可用于更换设备迁移解锁。",
+    ),
     "aboutSubtitle": MessageLookupByLibrary.simpleMessage(
       "时光胶囊 App · version 0.1",
     ),
     "aboutTitle": MessageLookupByLibrary.simpleMessage("关于"),
+    "appName": MessageLookupByLibrary.simpleMessage("时光胶囊·Time Capsule"),
     "appTitle": MessageLookupByLibrary.simpleMessage("时光胶囊"),
     "capsuleListTitle": MessageLookupByLibrary.simpleMessage("时光胶囊列表"),
     "capsuleName": MessageLookupByLibrary.simpleMessage("胶囊名称"),
@@ -92,6 +97,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "navSettings": MessageLookupByLibrary.simpleMessage("设置"),
     "notSynced": MessageLookupByLibrary.simpleMessage("未同步"),
     "openFailed": MessageLookupByLibrary.simpleMessage("打开失败"),
+    "openSourceLicenses": MessageLookupByLibrary.simpleMessage("开源许可证"),
     "pleaseFillAll": MessageLookupByLibrary.simpleMessage("请完整填写信息"),
     "selectFile": MessageLookupByLibrary.simpleMessage("选择文件"),
     "selectUnlockTime": MessageLookupByLibrary.simpleMessage("请选择解锁时间"),
@@ -123,5 +129,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "totalCapsules": MessageLookupByLibrary.simpleMessage("总胶囊数"),
     "unlockTime": m12,
     "unlockable": MessageLookupByLibrary.simpleMessage("可解锁数"),
+    "version": MessageLookupByLibrary.simpleMessage("版本："),
   };
 }

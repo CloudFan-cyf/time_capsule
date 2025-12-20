@@ -59,6 +59,46 @@ class S {
     return Intl.message('Time Capsule', name: 'appTitle', desc: '', args: []);
   }
 
+  /// `Time Capsule·时光胶囊`
+  String get appName {
+    return Intl.message(
+      'Time Capsule·时光胶囊',
+      name: 'appName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Encrypt and store files, viewable only after the unlock time`
+  String get aboutIntro {
+    return Intl.message(
+      'Encrypt and store files, viewable only after the unlock time',
+      name: 'aboutIntro',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Privacy Note: Content is stored locally by default; exporting the master key allows for device migration and unlocking.`
+  String get aboutPrivacyHint {
+    return Intl.message(
+      'Privacy Note: Content is stored locally by default; exporting the master key allows for device migration and unlocking.',
+      name: 'aboutPrivacyHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open Source Licenses`
+  String get openSourceLicenses {
+    return Intl.message(
+      'Open Source Licenses',
+      name: 'openSourceLicenses',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Dashboard`
   String get dashboard {
     return Intl.message('Dashboard', name: 'dashboard', desc: '', args: []);
@@ -582,6 +622,11 @@ class S {
       desc: '',
       args: [source, time, ago, err],
     );
+  }
+
+  /// `Version: `
+  String get version {
+    return Intl.message('Version: ', name: 'version', desc: '', args: []);
   }
 }
 

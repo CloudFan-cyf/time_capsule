@@ -57,10 +57,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "Delete": MessageLookupByLibrary.simpleMessage("Delete"),
     "DeleteCapsuleConfirmation": m0,
     "Refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
+    "aboutIntro": MessageLookupByLibrary.simpleMessage(
+      "Encrypt and store files, viewable only after the unlock time",
+    ),
+    "aboutPrivacyHint": MessageLookupByLibrary.simpleMessage(
+      "Privacy Note: Content is stored locally by default; exporting the master key allows for device migration and unlocking.",
+    ),
     "aboutSubtitle": MessageLookupByLibrary.simpleMessage(
       "Time Capsule App · MVP",
     ),
     "aboutTitle": MessageLookupByLibrary.simpleMessage("About"),
+    "appName": MessageLookupByLibrary.simpleMessage("Time Capsule·时光胶囊"),
     "appTitle": MessageLookupByLibrary.simpleMessage("Time Capsule"),
     "capsuleListTitle": MessageLookupByLibrary.simpleMessage("Capsule List"),
     "capsuleName": MessageLookupByLibrary.simpleMessage("Capsule Name"),
@@ -106,6 +113,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "navSettings": MessageLookupByLibrary.simpleMessage("Settings"),
     "notSynced": MessageLookupByLibrary.simpleMessage("Not synced"),
     "openFailed": MessageLookupByLibrary.simpleMessage("Open failed"),
+    "openSourceLicenses": MessageLookupByLibrary.simpleMessage(
+      "Open Source Licenses",
+    ),
     "pleaseFillAll": MessageLookupByLibrary.simpleMessage(
       "Please fill all fields",
     ),
@@ -155,5 +165,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "totalCapsules": MessageLookupByLibrary.simpleMessage("Total Capsules"),
     "unlockTime": m12,
     "unlockable": MessageLookupByLibrary.simpleMessage("Unlockable"),
+    "version": MessageLookupByLibrary.simpleMessage("Version: "),
   };
 }

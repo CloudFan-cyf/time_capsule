@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p show join;
 import 'package:share_plus/share_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:time_capsule/core/storage/file_store.dart';
 import 'package:time_capsule/core/storage/secure_key_store.dart';
@@ -375,10 +376,57 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
         ),
         const Divider(),
-        ListTile(
-          leading: const Icon(Icons.info_outline),
-          title: Text(l10n.aboutTitle),
-          subtitle: Text(l10n.aboutSubtitle),
+        // --- About (static) ---
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Icon(Icons.info_outline),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.appName, // 名称
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.aboutIntro,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    FutureBuilder<PackageInfo>(
+                      future: PackageInfo.fromPlatform(),
+                      builder: (context, snap) {
+                        if (!snap.hasData) return Text('${l10n.version} v...');
+                        final info = snap.data!;
+                        final v = info.version.trim();
+                        final b = info.buildNumber.trim();
+
+                        final text = b.isEmpty ? 'v$v' : 'v$v ($b)';
+                        return Text(
+                          '${l10n.version} $text',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.aboutPrivacyHint, // 一句隐私说明
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

@@ -1,5 +1,9 @@
 {
     "appTitle": "Time Capsule",
+    "appName": "Time Capsule·时光胶囊",
+    "aboutIntro": "Encrypt and store files, viewable only after the unlock time",
+    "aboutPrivacyHint": "Privacy Note: Content is stored locally by default; exporting the master key allows for device migration and unlocking.",
+    "openSourceLicenses": "Open Source Licenses",
     "dashboard": "Dashboard",
     "capsules": "Capsules",
     "settings": "Settings",
@@ -104,5 +108,6 @@
     "syncedSecondsAgo": "Time synced {seconds} seconds ago",
     "timeStatusSubtitleWithAgo": "{source}\nCurrent: {time}\n{ago}",
     "timeStatusSubtitleWithAgoAndError": "{source}\nCurrent: {time}\n{ago}\nError: {err}",
+    "version": "Version: ",
     "@@locale": "en"
 }

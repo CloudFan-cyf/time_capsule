@@ -1,5 +1,9 @@
 {
     "appTitle": "时光胶囊",
+    "appName": "时光胶囊·Time Capsule",
+    "aboutIntro": "加密保存文件，到期才能查看",
+    "aboutPrivacyHint": "隐私说明：内容默认仅存储在本机；导出主密钥可用于更换设备迁移解锁。",
+    "openSourceLicenses": "开源许可证",
     "dashboard": "统计数据",
     "capsules": "胶囊列表",
     "settings": "设置",
@@ -104,5 +108,6 @@
     "syncedSecondsAgo": "时间已在 {seconds} 秒前同步",
     "timeStatusSubtitleWithAgo": "{source}\n当前：{time}\n{ago}",
     "timeStatusSubtitleWithAgoAndError": "{source}\n当前：{time}\n{ago}\n错误：{err}",
+    "version": "版本：",
     "@@locale": "zh_CN"
 }
