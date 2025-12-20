@@ -74,23 +74,29 @@ class TimeServiceImpl implements TimeService {
       }
     }
 
-    // 并行尝试：NTP + HTTPS
-    final ntpFuture = _getNtpNowUtc()
-        .then((dt) {
-          return NetworkTimeResult(nowUtc: dt, source: 'NTP');
-        })
+    // ✅ 关键：让 future 的类型变成 NetworkTimeResult?，这样 catchError 返回 null 合法
+    final Future<NetworkTimeResult?> ntpFuture = _getNtpNowUtc()
+        .timeout(_ntpTimeout)
+        .then<NetworkTimeResult?>(
+          (dt) => NetworkTimeResult(nowUtc: dt, source: 'NTP'),
+        )
         .catchError((_) => null);
 
-    final httpsFuture = _getHttpsNowUtc()
-        .then((dt) {
-          return NetworkTimeResult(nowUtc: dt, source: 'HTTPS');
-        })
+    final Future<NetworkTimeResult?> httpsFuture = _getHttpsNowUtc()
+        .timeout(_httpsTimeout)
+        .then<NetworkTimeResult?>(
+          (dt) => NetworkTimeResult(nowUtc: dt, source: 'HTTPS'),
+        )
         .catchError((_) => null);
 
-    final results = await Future.wait([ntpFuture, httpsFuture]);
+    // ✅ Future.wait 也指定泛型，避免推断成 dynamic
+    final results = await Future.wait<NetworkTimeResult?>([
+      ntpFuture,
+      httpsFuture,
+    ]);
 
-    final ntpRes = results[0] as NetworkTimeResult?;
-    final httpsRes = results[1] as NetworkTimeResult?;
+    final ntpRes = results[0];
+    final httpsRes = results[1];
 
     NetworkTimeResult? chosen;
 
