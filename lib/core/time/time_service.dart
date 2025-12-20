@@ -62,6 +62,22 @@ class TimeServiceImpl implements TimeService {
     Uri.parse('https://www.apple.com/'),
   ];
 
+  final _lastErrors = <String>[];
+
+  Future<NetworkTimeResult?> _trySource(
+    Future<DateTime> Function() fn,
+    String source,
+    Duration timeout,
+  ) async {
+    try {
+      final dt = await fn().timeout(timeout);
+      return NetworkTimeResult(nowUtc: dt, source: source);
+    } catch (e) {
+      _lastErrors.add('$source: $e');
+      return null;
+    }
+  }
+
   @override
   Future<NetworkTimeResult> getTrustedNowUtc() async {
     // cache
@@ -73,26 +89,11 @@ class TimeServiceImpl implements TimeService {
         return c;
       }
     }
+    _lastErrors.clear();
 
-    // ✅ 关键：让 future 的类型变成 NetworkTimeResult?，这样 catchError 返回 null 合法
-    final Future<NetworkTimeResult?> ntpFuture = _getNtpNowUtc()
-        .timeout(_ntpTimeout)
-        .then<NetworkTimeResult?>(
-          (dt) => NetworkTimeResult(nowUtc: dt, source: 'NTP'),
-        )
-        .catchError((_) => null);
-
-    final Future<NetworkTimeResult?> httpsFuture = _getHttpsNowUtc()
-        .timeout(_httpsTimeout)
-        .then<NetworkTimeResult?>(
-          (dt) => NetworkTimeResult(nowUtc: dt, source: 'HTTPS'),
-        )
-        .catchError((_) => null);
-
-    // ✅ Future.wait 也指定泛型，避免推断成 dynamic
     final results = await Future.wait<NetworkTimeResult?>([
-      ntpFuture,
-      httpsFuture,
+      _trySource(_getNtpNowUtc, 'NTP', _ntpTimeout),
+      _trySource(_getHttpsNowUtc, 'HTTPS', _httpsTimeout),
     ]);
 
     final ntpRes = results[0];
@@ -109,10 +110,10 @@ class TimeServiceImpl implements TimeService {
 
     if (chosen == null) {
       throw TimeSyncException(
-        'Failed to obtain trusted time from both NTP and HTTPS.',
+        'Failed to obtain trusted time from both NTP and HTTPS. '
+        'Errors: ${_lastErrors.join(' | ')}',
       );
     }
-
     _cache = chosen;
     _cacheAtUtc = DateTime.now().toUtc();
     return chosen;
