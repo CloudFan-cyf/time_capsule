@@ -6,52 +6,64 @@ on:
     branches: [main]
 
 permissions:
-  contents: write   # 创建 tag / release / 上传附件
+  contents: write # 创建 tag / release / 上传附件
   pull-requests: read
 
 jobs:
-  # 1) 计算下一个版本号 & 创建 Release（先创建一个 release，后续各平台 job 往里上传附件）
   prepare_release:
     if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.ver.outputs.tag }}
       version: ${{ steps.ver.outputs.version }}
-      release_upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout (full history for tags)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Compute next semver tag (start from v0.1.0, bump patch)
+      - name: Read version from pubspec.yaml and compute tag
         id: ver
         shell: bash
         run: |
           set -euo pipefail
 
-          git fetch --tags --force
-
-          # 取最新 v* tag（按版本排序）
-          latest="$(git tag -l 'v*' | sort -V | tail -n 1 || true)"
-
-          if [ -z "${latest}" ]; then
-            next="v0.1.0"
-          else
-            # 只处理形如 vMAJOR.MINOR.PATCH
-            if [[ ! "${latest}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-              echo "Latest tag '${latest}' is not semver vMAJOR.MINOR.PATCH. Please fix tags." >&2
-              exit 1
-            fi
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            patch=$((patch + 1))
-            next="v${major}.${minor}.${patch}"
+          # 读取 pubspec.yaml 的 version: 行
+          version="$(grep -E '^[[:space:]]*version:[[:space:]]*' pubspec.yaml | head -n1 | sed -E 's/^[[:space:]]*version:[[:space:]]*//')"
+          if [ -z "$version" ]; then
+            echo "Failed to read version from pubspec.yaml" >&2
+            exit 1
           fi
 
-          echo "tag=${next}" >> "$GITHUB_OUTPUT"
-          echo "version=${next#v}" >> "$GITHUB_OUTPUT"
+          # 允许 version: 1.2.3 或 1.2.3+45
+          # tag 用 v${version//+/-}，避免 tag 里出现 +
+          tag="v${version//+/-}"
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if tag already exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          tag="${{ steps.ver.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Tag '${tag}' already exists. Please bump pubspec.yaml version/build number." >&2
+            exit 1
+          fi
+
+      - name: Fail if release already exists
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.ver.outputs.tag }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release '${tag}' already exists. Please bump pubspec.yaml version/build number." >&2
+            exit 1
+          fi
 
       - name: Create Git tag
         shell: bash
@@ -62,7 +74,6 @@ jobs:
           git push origin "${tag}"
 
       - name: Create GitHub Release (notes from PR body)
-        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
@@ -115,6 +126,26 @@ jobs:
       # 这里不强制修改 pubspec，避免污染工作区；如果你希望真正写入，可在这里加脚本替换 pubspec.yaml version。
 
       # ---------- Build ----------
+      - name: Restore Android keystore
+        if: ${{ matrix.name == 'android' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p android/keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > android/keystore/release.jks
+
+      - name: Write key.properties
+        if: ${{ matrix.name == 'android' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=keystore/release.jks
+          EOF
+
       - name: Build Android (APK + AAB)
         if: ${{ matrix.name == 'android' }}
         shell: bash
@@ -124,6 +155,15 @@ jobs:
 
           mkdir -p dist
           cp -f build/app/outputs/flutter-apk/app-release.apk "dist/app-${TAG}-android.apk"
+      - name: Print APK signing cert (debug)
+        if: ${{ matrix.name == 'android' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          # 找到 apksigner（不同 runner 路径可能不同）
+          APKSIGNER="$(ls "$ANDROID_SDK_ROOT/build-tools"/*/apksigner | sort -V | tail -n 1)"
+          "$APKSIGNER" verify --print-certs "$APK" | sed -n '1,80p'
 
       - name: Build Windows
         if: ${{ matrix.name == 'windows' }}
