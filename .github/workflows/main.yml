@@ -122,6 +122,8 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      # 可选：把版本号写进构建（一般 Flutter 用 pubspec.yaml 的 version）
+      # 这里不强制修改 pubspec，避免污染工作区；如果你希望真正写入，可在这里加脚本替换 pubspec.yaml version。
 
       # ---------- Build ----------
       - name: Restore Android keystore
@@ -129,9 +131,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p android/app/keystore
-          echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | tr -d '\n\r' | base64 --decode > android/app/keystore/release.jks
-          test -s android/app/keystore/release.jks
+          mkdir -p android/keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > android/keystore/release.jks
 
       - name: Write key.properties
         if: ${{ matrix.name == 'android' }}
@@ -142,7 +143,7 @@ jobs:
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=app/keystore/release.jks
+          storeFile=keystore/release.jks
           EOF
 
       - name: Build Android (APK + AAB)
