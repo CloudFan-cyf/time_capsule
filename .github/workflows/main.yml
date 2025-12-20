@@ -122,16 +122,14 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-
       # ---------- Build ----------
       - name: Restore Android keystore
         if: ${{ matrix.name == 'android' }}
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p android/app/keystore
-          echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | tr -d '\n\r' | base64 --decode > android/app/keystore/release.jks
-          test -s android/app/keystore/release.jks
+          mkdir -p android/keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > android/keystore/release.jks
 
       - name: Write key.properties
         if: ${{ matrix.name == 'android' }}
@@ -142,7 +140,7 @@ jobs:
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=app/keystore/release.jks
+          storeFile=keystore/release.jks
           EOF
 
       - name: Build Android (APK + AAB)

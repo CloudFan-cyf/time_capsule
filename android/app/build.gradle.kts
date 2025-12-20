@@ -51,7 +51,7 @@ android {
                 storePassword = keystoreProperties["storePassword"] as String
 
                 val storeFilePath = keystoreProperties["storeFile"] as String
-                storeFile = file(storeFilePath)
+                storeFile = rootProject.file(storeFilePath)
             }
         }
     }
