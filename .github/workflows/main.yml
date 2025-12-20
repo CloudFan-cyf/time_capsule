@@ -122,9 +122,6 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      # 可选：把版本号写进构建（一般 Flutter 用 pubspec.yaml 的 version）
-      # 这里不强制修改 pubspec，避免污染工作区；如果你希望真正写入，可在这里加脚本替换 pubspec.yaml version。
-
       # ---------- Build ----------
       - name: Restore Android keystore
         if: ${{ matrix.name == 'android' }}
