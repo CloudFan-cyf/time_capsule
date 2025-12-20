@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import '../../features/capsules/data/models/network_time.dart';
 
 abstract class TimeService {
   Future<NetworkTimeResult> getTrustedNowUtc();
   Future<bool> canOpen({required int unlockAtUtcMs});
+  Duration get cacheTtl;
 }
 
 class TimeSyncException implements Exception {
@@ -17,42 +17,32 @@ class TimeSyncException implements Exception {
   String toString() => 'TimeSyncException: $message';
 }
 
+/// 可信在线时间证明（Trusted Online Time Attestation）
+///
+/// - 只使用 HTTPS（TLS）来源：读取 HTTP Date 头（UTC/GMT）
+/// - 通过多源一致性（quorum-ish）降低单点伪造风险
 class TimeServiceImpl implements TimeService {
   TimeServiceImpl({
-    Duration? ntpTimeout,
     Duration? httpsTimeout,
     Duration? cacheTtl,
-    Duration? maxSkewBetweenSources,
-  }) : _ntpTimeout = ntpTimeout ?? const Duration(seconds: 2),
-       _httpsTimeout = httpsTimeout ?? const Duration(seconds: 3),
+    Duration? maxSkewBetweenHttpsSources,
+  }) : _httpsTimeout = httpsTimeout ?? const Duration(seconds: 3),
        _cacheTtl = cacheTtl ?? const Duration(seconds: 20),
-       _maxSkew = maxSkewBetweenSources ?? const Duration(seconds: 10);
+       _maxSkew = maxSkewBetweenHttpsSources ?? const Duration(seconds: 10);
 
-  final Duration _ntpTimeout;
   final Duration _httpsTimeout;
   final Duration _cacheTtl;
 
-  /// NTP 与 HTTPS 同时成功时，如果两者相差超过该阈值，则更偏向 HTTPS（TLS）
+  /// 多个 HTTPS 源同时成功时，允许的最大偏差窗口
   final Duration _maxSkew;
+  @override
+  Duration get cacheTtl => _cacheTtl;
 
   NetworkTimeResult? _cache;
   DateTime? _cacheAtUtc;
 
-  // -------- Sources --------
-
-  // Tencent public NTP servers (good in China + global)
-  // NTP Pool for China / Global
-  static const List<String> _ntpHosts = [
-    'ntp.tencent.com',
-    'ntp1.tencent.com',
-    'cn.pool.ntp.org',
-    'pool.ntp.org',
-    'asia.pool.ntp.org',
-    'time.apple.com',
-    'time.windows.com',
-  ];
-
-  // HTTPS Date header sources (mix CN + international)
+  /// HTTPS Date header sources (CN + international).
+  /// 这些站点通常在大陆/国际都可访问（但仍可能受网络环境影响）。
   static final List<Uri> _httpsUris = [
     Uri.parse('https://www.baidu.com/'),
     Uri.parse('https://www.qq.com/'),
@@ -62,21 +52,7 @@ class TimeServiceImpl implements TimeService {
     Uri.parse('https://www.apple.com/'),
   ];
 
-  final _lastErrors = <String>[];
-
-  Future<NetworkTimeResult?> _trySource(
-    Future<DateTime> Function() fn,
-    String source,
-    Duration timeout,
-  ) async {
-    try {
-      final dt = await fn().timeout(timeout);
-      return NetworkTimeResult(nowUtc: dt, source: source);
-    } catch (e) {
-      _lastErrors.add('$source: $e');
-      return null;
-    }
-  }
+  final List<String> _lastErrors = [];
 
   @override
   Future<NetworkTimeResult> getTrustedNowUtc() async {
@@ -89,31 +65,24 @@ class TimeServiceImpl implements TimeService {
         return c;
       }
     }
+
     _lastErrors.clear();
 
-    final results = await Future.wait<NetworkTimeResult?>([
-      _trySource(_getNtpNowUtc, 'NTP', _ntpTimeout),
-      _trySource(_getHttpsNowUtc, 'HTTPS', _httpsTimeout),
-    ]);
+    // 并行请求所有 HTTPS 源，收集成功项
+    final futures = _httpsUris.map((u) => _tryHttps(u));
+    final results = await Future.wait<NetworkTimeResult?>(futures);
 
-    final ntpRes = results[0];
-    final httpsRes = results[1];
-
-    NetworkTimeResult? chosen;
-
-    if (ntpRes != null && httpsRes != null) {
-      final diff = ntpRes.nowUtc.difference(httpsRes.nowUtc).abs();
-      chosen = diff <= _maxSkew ? ntpRes : httpsRes;
-    } else {
-      chosen = ntpRes ?? httpsRes;
-    }
-
-    if (chosen == null) {
+    final ok = results.whereType<NetworkTimeResult>().toList();
+    if (ok.isEmpty) {
       throw TimeSyncException(
-        'Failed to obtain trusted time from both NTP and HTTPS. '
+        'HTTPS time attestation failed. '
         'Errors: ${_lastErrors.join(' | ')}',
       );
     }
+
+    // 选择可信时间：优先找“至少 2 个源在 _maxSkew 内一致”的最大簇
+    final chosen = _chooseByMaxCluster(ok, _maxSkew);
+
     _cache = chosen;
     _cacheAtUtc = DateTime.now().toUtc();
     return chosen;
@@ -125,18 +94,22 @@ class TimeServiceImpl implements TimeService {
       final res = await getTrustedNowUtc();
       return res.nowUtc.millisecondsSinceEpoch >= unlockAtUtcMs;
     } catch (_) {
-      // 无法联网校时 -> 不可信 -> 默认不能打开（防止本地时间被篡改绕过）
+      // 无法拿到可信在线时间 -> 不允许解锁（防止本地时间篡改绕过）
       return false;
     }
   }
 
-  // -------- HTTPS Date strategy --------
+  // -------- HTTPS single source --------
 
-  Future<DateTime> _getHttpsNowUtc() async {
-    final futures = _httpsUris.map(
-      (u) => _fetchHttpsDate(u).timeout(_httpsTimeout),
-    );
-    return _firstSuccessful<DateTime>(futures);
+  Future<NetworkTimeResult?> _tryHttps(Uri uri) async {
+    try {
+      final dt = await _fetchHttpsDate(uri).timeout(_httpsTimeout);
+      // source 里带 host，方便 UI/debug
+      return NetworkTimeResult(nowUtc: dt, source: 'HTTPS:${uri.host}');
+    } catch (e) {
+      _lastErrors.add('${uri.host}: $e');
+      return null;
+    }
   }
 
   Future<DateTime> _fetchHttpsDate(Uri uri) async {
@@ -148,7 +121,7 @@ class TimeServiceImpl implements TimeService {
 
     HttpClientResponse resp;
     try {
-      // 优先 HEAD（省流量），若 405/不支持，再退回 GET
+      // 优先 HEAD（省流量），若不支持再退回 GET
       try {
         final req = await client.headUrl(uri);
         req.followRedirects = true;
@@ -170,10 +143,9 @@ class TimeServiceImpl implements TimeService {
         throw TimeSyncException('No Date header from ${uri.host}');
       }
 
-      // HTTP Date 是 GMT/UTC，可用 dart:io 的 HttpDate.parse 解析
       final serverUtc = HttpDate.parse(dateStr).toUtc();
 
-      // 用半个 RTT 做简单延迟补偿
+      // 简单 RTT/2 延迟补偿
       final adjust = Duration(microseconds: sw.elapsedMicroseconds ~/ 2);
       return serverUtc.add(adjust);
     } finally {
@@ -181,118 +153,43 @@ class TimeServiceImpl implements TimeService {
     }
   }
 
-  // -------- NTP strategy --------
+  // -------- choose best by cluster --------
 
-  static const int _ntpEpochOffsetSeconds = 2208988800; // 1900->1970
-  static const int _ntpPacketSize = 48;
+  /// 从多个时间结果中选“最大一致簇”，并返回该簇内的最小时间（更保守，防止提前解锁）。
+  NetworkTimeResult _chooseByMaxCluster(
+    List<NetworkTimeResult> items,
+    Duration maxSkew,
+  ) {
+    // 按时间升序
+    items.sort((a, b) => a.nowUtc.compareTo(b.nowUtc));
 
-  Future<DateTime> _getNtpNowUtc() async {
-    // 逐个 host 并行发起，取第一个成功的
-    final futures = _ntpHosts.map((h) => _fetchNtpTime(h).timeout(_ntpTimeout));
-    return _firstSuccessful<DateTime>(futures);
-  }
+    // 滑动窗口找最大簇：窗口内最大-最小 <= maxSkew
+    var bestStart = 0;
+    var bestEnd = 0; // inclusive
+    var i = 0;
 
-  Future<DateTime> _fetchNtpTime(String host) async {
-    final addresses = await InternetAddress.lookup(host);
-    if (addresses.isEmpty) {
-      throw TimeSyncException('NTP DNS lookup failed: $host');
+    for (var j = 0; j < items.length; j++) {
+      while (items[j].nowUtc.difference(items[i].nowUtc) > maxSkew) {
+        i++;
+      }
+      // 当前窗口 [i, j]
+      final size = j - i + 1;
+      final bestSize = bestEnd - bestStart + 1;
+      if (size > bestSize) {
+        bestStart = i;
+        bestEnd = j;
+      }
     }
 
-    final addr = addresses.first;
-    final socket = await RawDatagramSocket.bind(
-      addr.type == InternetAddressType.IPv6
-          ? InternetAddress.anyIPv6
-          : InternetAddress.anyIPv4,
-      0,
-    );
+    final bestSize = bestEnd - bestStart + 1;
 
-    try {
-      final request = Uint8List(_ntpPacketSize);
-      request[0] = 0x1B; // LI=0, VN=3, Mode=3 (client)
-
-      // 填一个 transmit timestamp（非必须，但规范一些）
-      final now = DateTime.now().toUtc();
-      _writeNtpTimestamp(request, 40, now);
-
-      final sw = Stopwatch()..start();
-      socket.send(request, addr, 123);
-
-      final completer = Completer<Datagram>();
-      late StreamSubscription sub;
-
-      sub = socket.listen((_) {
-        final dg = socket.receive();
-        if (dg != null && dg.data.length >= _ntpPacketSize) {
-          if (!completer.isCompleted) completer.complete(dg);
-          sub.cancel();
-        }
-      });
-
-      final dg = await completer.future;
-      sw.stop();
-
-      final data = dg.data;
-      final serverTransmitUtc = _readNtpTimestamp(data, 40);
-
-      // 用半 RTT 补偿（避免依赖本地系统时间精确性）
-      final adjust = Duration(microseconds: sw.elapsedMicroseconds ~/ 2);
-      return serverTransmitUtc.add(adjust);
-    } finally {
-      socket.close();
-    }
-  }
-
-  void _writeNtpTimestamp(Uint8List buf, int offset, DateTime utc) {
-    final ms = utc.millisecondsSinceEpoch;
-    final seconds = (ms ~/ 1000) + _ntpEpochOffsetSeconds;
-    final fracMs = ms % 1000;
-    final fraction = ((fracMs / 1000.0) * 0x100000000).floor(); // 2^32
-
-    final bd = ByteData.sublistView(buf);
-    bd.setUint32(offset, seconds, Endian.big);
-    bd.setUint32(offset + 4, fraction, Endian.big);
-  }
-
-  DateTime _readNtpTimestamp(Uint8List buf, int offset) {
-    final bd = ByteData.sublistView(buf);
-    final seconds = bd.getUint32(offset, Endian.big);
-    final fraction = bd.getUint32(offset + 4, Endian.big);
-
-    final unixSeconds = seconds - _ntpEpochOffsetSeconds;
-    final micros =
-        (unixSeconds * 1000000) + ((fraction * 1000000) ~/ 0x100000000);
-
-    return DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true);
-  }
-
-  // -------- util: first success --------
-
-  Future<T> _firstSuccessful<T>(Iterable<Future<T>> futures) {
-    final list = futures.toList();
-    if (list.isEmpty) {
-      return Future.error(TimeSyncException('No candidates'));
+    if (bestSize >= 2) {
+      // 簇内取最小时间：更保守（避免被伪造到未来）
+      return items[bestStart];
     }
 
-    final completer = Completer<T>();
-    var remaining = list.length;
-    final errors = <Object>[];
-
-    for (final f in list) {
-      f
-          .then((value) {
-            if (!completer.isCompleted) completer.complete(value);
-          })
-          .catchError((e) {
-            errors.add(e);
-            remaining -= 1;
-            if (remaining == 0 && !completer.isCompleted) {
-              completer.completeError(
-                TimeSyncException('All candidates failed: $errors'),
-              );
-            }
-          });
-    }
-
-    return completer.future;
+    // 只有一个源成功：退化为单点（可用性优先）
+    // 为了安全，你也可以改成：bestSize<2 直接抛错。
+    return items.first;
   }
 }

@@ -29,10 +29,14 @@ class _SettingsPageState extends State<SettingsPage> {
   final TimeService _timeService = TimeServiceImpl();
 
   Timer? _tick;
-  Duration? _offset;
   String _timeSource = '...';
-  DateTime? _lastSyncUtc;
+  DateTime? _lastTrustedUtc; // 最近一次拿到的可信 UTC 时间
+  DateTime? _trustedAtLocalUtc; // 拿到可信时间那一刻，本地 UTC（用于 UI 平滑递增）
+  DateTime? _lastSyncLocalUtc; // 上次同步发生的本地 UTC（用于 “xx秒前”）
   String? _timeErr;
+
+  bool _syncing = false;
+  DateTime? _cooldownUntilLocalUtc; // 刷新按钮冷却截止时刻（本地 UTC）
   late final S l10n = S.of(context);
 
   bool _loadingPath = true;
@@ -64,42 +68,100 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _syncTime() async {
+    if (_syncing) return;
+
+    // 冷却：在 cacheTtl 内不允许频繁点击
+    final nowLocalUtc = DateTime.now().toUtc();
+    final cd = _cooldownUntilLocalUtc;
+    if (cd != null && nowLocalUtc.isBefore(cd)) {
+      if (!mounted) return;
+      final remain = cd.difference(nowLocalUtc).inSeconds.clamp(0, 1 << 30);
+      showSnack(context, l10n.timeRefreshCooldown(remain)); // 需要在 l10n 加一句
+      return;
+    }
+
+    _syncing = true;
     try {
       final res = await _timeService.getTrustedNowUtc();
-      final localUtc = DateTime.now().toUtc();
+
       if (!mounted) return;
+      final nowLocalUtc2 = DateTime.now().toUtc();
+
       setState(() {
-        _offset = res.nowUtc.difference(localUtc);
         _timeSource = res.source;
-        _lastSyncUtc = DateTime.now().toUtc();
+        _lastTrustedUtc = res.nowUtc;
+        _trustedAtLocalUtc = nowLocalUtc2;
+        _lastSyncLocalUtc = nowLocalUtc2;
         _timeErr = null;
+
+        // 冷却到 now + cacheTtl
+        _cooldownUntilLocalUtc = nowLocalUtc2.add(_timeService.cacheTtl);
+
+        if (kDebugMode) {
+          debugPrint(
+            'Time attestation OK: source=${res.source}, '
+            'trustedUtc=${res.nowUtc.toIso8601String()}, '
+            'localUtc=${nowLocalUtc2.toIso8601String()}',
+          );
+        }
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _offset = null;
         _timeSource = 'OFFLINE';
-        _lastSyncUtc = DateTime.now().toUtc();
         _timeErr = e.toString();
+        _lastSyncLocalUtc = DateTime.now().toUtc();
+        // 失败也给一点冷却，避免疯狂点（同样用 cacheTtl）
+        _cooldownUntilLocalUtc = DateTime.now().toUtc().add(
+          _timeService.cacheTtl,
+        );
       });
+    } finally {
+      _syncing = false;
     }
   }
 
-  DateTime _currentTrustedUtc() {
-    final nowUtc = DateTime.now().toUtc();
-    return _offset == null ? nowUtc : nowUtc.add(_offset!);
+  DateTime _currentDisplayUtc() {
+    // 用于 UI 展示：若拿到可信时间，则按本地经过时间递增
+    final trusted = _lastTrustedUtc;
+    final atLocal = _trustedAtLocalUtc;
+    if (trusted == null || atLocal == null) {
+      return DateTime.now().toUtc();
+    }
+    final delta = DateTime.now().toUtc().difference(atLocal);
+    // delta 可能为负（系统时间被往回拨），做个保护
+    final safeDelta = delta.isNegative ? Duration.zero : delta;
+    return trusted.add(safeDelta);
   }
 
   String _timeSubtitle() {
-    final nowLocal = _currentTrustedUtc().toLocal();
+    final nowLocal = _currentDisplayUtc().toLocal();
     final t = DateFormat('yyyy-MM-dd HH:mm:ss').format(nowLocal);
-    final last = _lastSyncUtc == null
+
+    final lastLocalUtc = _lastSyncLocalUtc;
+    final secondsAgo = lastLocalUtc == null
+        ? null
+        : DateTime.now().toUtc().difference(lastLocalUtc).inSeconds;
+    final agoText = secondsAgo == null
         ? l10n.notSynced
-        : DateFormat('HH:mm:ss').format(_lastSyncUtc!.toLocal());
+        : l10n.syncedSecondsAgo(secondsAgo);
+
     if (_timeErr == null || _timeErr!.isEmpty) {
-      return l10n.timeStatusSubtitle(_timeSource, t, last);
+      return l10n.timeStatusSubtitleWithAgo(_timeSource, t, agoText);
     }
-    return l10n.timeStatusSubtitleWithError(_timeSource, t, last, _timeErr!);
+
+    String displayErr = _timeErr!;
+    if (kDebugMode) debugPrint('Time attestation error: $_timeErr');
+    const int maxErrLen = 20;
+    if (displayErr.length > maxErrLen) {
+      displayErr = '${displayErr.substring(0, maxErrLen)}…';
+    }
+    return l10n.timeStatusSubtitleWithAgoAndError(
+      _timeSource,
+      t,
+      agoText,
+      displayErr,
+    );
   }
 
   Future<void> _debugPrintKeyStoragePaths() async {
@@ -241,6 +303,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final nowUtc = DateTime.now().toUtc();
+    final cooldownUntil = _cooldownUntilLocalUtc;
+    final inCooldown = cooldownUntil != null && nowUtc.isBefore(cooldownUntil);
+    final remainSec = inCooldown
+        ? cooldownUntil.difference(nowUtc).inSeconds
+        : 0;
+
     final storageSubtitle = _loadingPath
         ? l10n.settingsStorageLoading
         : _usingDefault
@@ -257,8 +326,10 @@ class _SettingsPageState extends State<SettingsPage> {
           isThreeLine: true,
           trailing: IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: l10n.Refresh,
-            onPressed: _syncTime,
+            tooltip: inCooldown
+                ? l10n.timeRefreshCooldown(remainSec)
+                : l10n.Refresh,
+            onPressed: (inCooldown || _syncing) ? null : _syncTime,
           ),
         ),
         const Divider(),

@@ -100,5 +100,9 @@
     "Delete": "删除",
     "Cancel": "取消",
     "Refresh": "刷新",
+    "timeRefreshCooldown": "请在 {seconds} 秒后再刷新",
+    "syncedSecondsAgo": "时间已在 {seconds} 秒前同步",
+    "timeStatusSubtitleWithAgo": "{source}\n当前：{time}\n{ago}",
+    "timeStatusSubtitleWithAgoAndError": "{source}\n当前：{time}\n{ago}\n错误：{err}",
     "@@locale": "zh_CN"
 }

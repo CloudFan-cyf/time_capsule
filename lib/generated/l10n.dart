@@ -538,6 +538,51 @@ class S {
   String get Refresh {
     return Intl.message('Refresh', name: 'Refresh', desc: '', args: []);
   }
+
+  /// `Please wait {seconds} seconds before refreshing again`
+  String timeRefreshCooldown(Object seconds) {
+    return Intl.message(
+      'Please wait $seconds seconds before refreshing again',
+      name: 'timeRefreshCooldown',
+      desc: '',
+      args: [seconds],
+    );
+  }
+
+  /// `Time synced {seconds} seconds ago`
+  String syncedSecondsAgo(Object seconds) {
+    return Intl.message(
+      'Time synced $seconds seconds ago',
+      name: 'syncedSecondsAgo',
+      desc: '',
+      args: [seconds],
+    );
+  }
+
+  /// `{source}\nCurrent: {time}\n{ago}`
+  String timeStatusSubtitleWithAgo(Object source, Object time, Object ago) {
+    return Intl.message(
+      '$source\nCurrent: $time\n$ago',
+      name: 'timeStatusSubtitleWithAgo',
+      desc: '',
+      args: [source, time, ago],
+    );
+  }
+
+  /// `{source}\nCurrent: {time}\n{ago}\nError: {err}`
+  String timeStatusSubtitleWithAgoAndError(
+    Object source,
+    Object time,
+    Object ago,
+    Object err,
+  ) {
+    return Intl.message(
+      '$source\nCurrent: $time\n$ago\nError: $err',
+      name: 'timeStatusSubtitleWithAgoAndError',
+      desc: '',
+      args: [source, time, ago, err],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

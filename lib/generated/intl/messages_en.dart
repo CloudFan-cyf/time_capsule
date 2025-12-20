@@ -33,13 +33,23 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(path) => "Using app private directory:\n${path}";
 
-  static String m6(source, now, last) =>
+  static String m6(seconds) => "Time synced ${seconds} seconds ago";
+
+  static String m7(seconds) =>
+      "Please wait ${seconds} seconds before refreshing again";
+
+  static String m8(source, now, last) =>
       "Source: ${source}\nCurrent time: ${now}\nLast sync: ${last}";
 
-  static String m7(source, now, last, error) =>
+  static String m9(source, time, ago) => "${source}\nCurrent: ${time}\n${ago}";
+
+  static String m10(source, time, ago, err) =>
+      "${source}\nCurrent: ${time}\n${ago}\nError: ${err}";
+
+  static String m11(source, now, last, error) =>
       "Source: ${source}\nCurrent time: ${now}\nLast sync: ${last}\nError: ${error}";
 
-  static String m8(time) => "Unlock time: ${time}";
+  static String m12(time) => "Unlock time: ${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -131,15 +141,19 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "switchToDark": MessageLookupByLibrary.simpleMessage("Switch to dark"),
     "switchToLight": MessageLookupByLibrary.simpleMessage("Switch to light"),
+    "syncedSecondsAgo": m6,
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "theme": MessageLookupByLibrary.simpleMessage("Theme"),
-    "timeStatusSubtitle": m6,
-    "timeStatusSubtitleWithError": m7,
+    "timeRefreshCooldown": m7,
+    "timeStatusSubtitle": m8,
+    "timeStatusSubtitleWithAgo": m9,
+    "timeStatusSubtitleWithAgoAndError": m10,
+    "timeStatusSubtitleWithError": m11,
     "timeStatusTitle": MessageLookupByLibrary.simpleMessage(
       "Network time status",
     ),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("Total Capsules"),
-    "unlockTime": m8,
+    "unlockTime": m12,
     "unlockable": MessageLookupByLibrary.simpleMessage("Unlockable"),
   };
 }

@@ -100,5 +100,9 @@
     "Delete": "Delete",
     "Cancel": "Cancel",
     "Refresh": "Refresh",
+    "timeRefreshCooldown": "Please wait {seconds} seconds before refreshing again",
+    "syncedSecondsAgo": "Time synced {seconds} seconds ago",
+    "timeStatusSubtitleWithAgo": "{source}\nCurrent: {time}\n{ago}",
+    "timeStatusSubtitleWithAgoAndError": "{source}\nCurrent: {time}\n{ago}\nError: {err}",
     "@@locale": "en"
 }
