@@ -24,6 +24,8 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
   List<File> pickedFiles = [];
 
   late final CapsuleRepository repo;
+  bool _creating = false;
+  CryptoProgress? _progress;
 
   @override
   void initState() {
@@ -120,33 +122,63 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                 ),
               ],
             ),
+            if (_creating) ...[
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: (_progress == null) ? null : _progress!.fraction,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _progress == null
+                    ? '正在加密...'
+                    : '正在加密：${_progress!.fileName}  ${_progress!.percent}%',
+              ),
+            ],
+
             const Spacer(),
             ElevatedButton(
-              onPressed: () async {
-                if (pickedFiles.isEmpty ||
-                    unlockAt == null ||
-                    titleCtrl.text.isEmpty) {
-                  final messenger = ScaffoldMessenger.of(context);
-                  messenger.clearSnackBars();
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(l10n.pleaseFillAll)),
-                  );
-                  return;
-                }
-                try {
-                  final params = CapsuleParams(
-                    title: titleCtrl.text,
-                    unlockAtUtcMs: unlockAt!.millisecondsSinceEpoch,
-                  );
-                  await repo.createCapsuleFromFiles(pickedFiles, params);
-                  notifyCapsulesChanged();
-                  if (!mounted) return;
-                  Navigator.of(context).pop();
-                } catch (e) {
-                  if (!mounted) return;
-                  showSnack(context, l10n.createFailed(e.toString()));
-                }
-              },
+              onPressed: _creating
+                  ? null
+                  : () async {
+                      if (pickedFiles.isEmpty ||
+                          unlockAt == null ||
+                          titleCtrl.text.isEmpty) {
+                        final messenger = ScaffoldMessenger.of(context);
+                        messenger.clearSnackBars();
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(l10n.pleaseFillAll)),
+                        );
+                        return;
+                      }
+                      try {
+                        setState(() {
+                          _creating = true;
+                          _progress = null;
+                        });
+                        final params = CapsuleParams(
+                          title: titleCtrl.text,
+                          unlockAtUtcMs: unlockAt!.millisecondsSinceEpoch,
+                        );
+                        await repo.createCapsuleFromFiles(
+                          pickedFiles,
+                          params,
+                          onProgress: (p) {
+                            if (!mounted) return;
+                            setState(() => _progress = p);
+                          },
+                        );
+                        notifyCapsulesChanged();
+                        if (!mounted) return;
+                        Navigator.of(context).pop();
+                      } catch (e) {
+                        if (!mounted) return;
+                        showSnack(context, l10n.createFailed(e.toString()));
+                      } finally {
+                        if (mounted) {
+                          setState(() => _creating = false);
+                        }
+                      }
+                    },
               child: Text(l10n.createCapsule),
             ),
           ],

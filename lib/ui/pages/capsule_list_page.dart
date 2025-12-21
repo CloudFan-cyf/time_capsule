@@ -78,7 +78,27 @@ class _CapsuleListPageState extends State<CapsuleListPage> {
   }
 
   Future<void> _openCapsule(Capsule c) async {
-    final res = await repo.openCapsule(c);
+    final notifier = ValueNotifier<CryptoProgress?>(null);
+
+    // 先弹窗（不 await）
+    final dialogFuture = _showDecryptProgressDialog(notifier);
+
+    OpenResult res;
+    try {
+      res = await repo.openCapsule(
+        c,
+        onDecryptProgress: (p) => notifier.value = p,
+      );
+    } finally {
+      // 关闭弹窗
+      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      notifier.dispose();
+    }
+
+    // 等待弹窗真正退出（避免某些平台上 pop 后立刻 push 的视觉冲突）
+    await dialogFuture.catchError((_) {});
 
     if (!mounted) return;
 
@@ -296,6 +316,35 @@ class _CapsuleListPageState extends State<CapsuleListPage> {
 
     // 桌面端：返回带 key 的子树给 ReorderableListView
     return KeyedSubtree(key: ValueKey(c.id), child: card);
+  }
+
+  Future<void> _showDecryptProgressDialog(
+    ValueNotifier<CryptoProgress?> notifier,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('正在打开胶囊'),
+        content: ValueListenableBuilder<CryptoProgress?>(
+          valueListenable: notifier,
+          builder: (context, p, _) {
+            final value = (p == null) ? null : p.fraction;
+            final text = (p == null)
+                ? '准备中...'
+                : '正在解密：${p.fileName}\n${p.percent}%';
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(value: value),
+                const SizedBox(height: 12),
+                Text(text),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 
   @override
