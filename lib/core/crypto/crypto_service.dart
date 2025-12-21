@@ -33,6 +33,85 @@ class CryptoServiceImpl implements CryptoService {
   final MasterKeyService masterKeyService;
 
   final AesGcm _aesGcm = AesGcm.with256bits();
+  static const List<int> _magicTCF1 = [0x54, 0x43, 0x46, 0x31]; // 'TCF1'
+  static const int _encHeaderSize = 26;
+  static const int _gcmNonceSize = 12;
+  static const int _gcmTagSize = 16;
+
+  // 默认分块大小：1 MiB（可根据你性能需求调大到 4~8MiB）
+  static const int _defaultChunkSize = 1 << 20;
+
+  Uint8List _nonceForChunk(Uint8List prefix8, int chunkIndex) {
+    final nonce = Uint8List(_gcmNonceSize);
+    nonce.setRange(0, 8, prefix8);
+    final bd = ByteData.sublistView(nonce);
+    bd.setUint32(8, chunkIndex, Endian.big);
+    return nonce;
+  }
+
+  Uint8List _buildHeader({
+    required int chunkSize,
+    required int plainSize,
+    required Uint8List noncePrefix8,
+  }) {
+    final buf = Uint8List(_encHeaderSize);
+    buf.setRange(0, 4, _magicTCF1);
+    buf[4] = 1; // version
+    buf[5] = 0; // flags
+    final bd = ByteData.sublistView(buf);
+    bd.setUint32(6, chunkSize, Endian.big);
+    bd.setUint64(10, plainSize, Endian.big);
+    buf.setRange(18, 26, noncePrefix8);
+    return buf;
+  }
+
+  ({int version, int chunkSize, int plainSize, Uint8List noncePrefix8})
+  _parseHeader(Uint8List header) {
+    if (header.length < _encHeaderSize) {
+      throw const FormatException('Encrypted header too small');
+    }
+    for (var i = 0; i < 4; i++) {
+      if (header[i] != _magicTCF1[i]) {
+        throw const FormatException('Not a TCF1 encrypted file');
+      }
+    }
+    final version = header[4];
+    if (version != 1) {
+      throw FormatException('Unsupported encrypted file version: $version');
+    }
+    final bd = ByteData.sublistView(header);
+    final chunkSize = bd.getUint32(6, Endian.big);
+    final plainSize64 = bd.getUint64(10, Endian.big);
+    if (chunkSize <= 0) {
+      throw FormatException('Invalid chunkSize: $chunkSize');
+    }
+    if (plainSize64 > 0x7fffffff) {
+      // Dart int 在 64-bit 上没问题，但这里给个防御性提示（可按需移除）
+    }
+    final prefix8 = Uint8List.fromList(header.sublist(18, 26));
+    return (
+      version: version,
+      chunkSize: chunkSize,
+      plainSize: plainSize64.toInt(),
+      noncePrefix8: prefix8,
+    );
+  }
+
+  Future<void> _commitTempFile(File tmp, File target) async {
+    await target.parent.create(recursive: true);
+    try {
+      if (await target.exists()) {
+        await target.delete();
+      }
+      await tmp.rename(target.path);
+    } catch (_) {
+      // Windows/Android 某些情况下 rename 可能失败，退化为 copy+delete
+      await tmp.copy(target.path);
+      try {
+        await tmp.delete();
+      } catch (_) {}
+    }
+  }
 
   CryptoServiceImpl({FileStore? fileStore, MasterKeyService? masterKeyService})
     : fileStore = fileStore ?? FileStoreImpl(),
@@ -59,31 +138,86 @@ class CryptoServiceImpl implements CryptoService {
     return replaced.isEmpty ? 'file.bin' : replaced;
   }
 
-  /// 文件加密输出格式： nonce(12) + ciphertext + tag(16)
+  /// 文件加密输出格式（分块容器 v1，支持大文件）
+  ///
+  /// Header(26 bytes):
+  /// - magic: 4 bytes = 'TCF1'
+  /// - version: 1 byte = 1
+  /// - flags: 1 byte = 0
+  /// - chunkSize: uint32 (BE)
+  /// - plainSize: uint64 (BE)
+  /// - noncePrefix: 8 bytes (random)
+  ///
+  /// Body:
+  /// for each chunk i:
+  ///   nonce = noncePrefix(8) + uint32(i, BE)  // total 12 bytes
+  ///   write: cipherText(len=plainChunkLen) + tag(16)
+
   Future<void> _encryptFileToEnc({
     required File src,
     required File encOut,
     required Uint8List dek,
+    int chunkSize = _defaultChunkSize,
   }) async {
-    final plain = await src.readAsBytes(); // MVP：整文件读入内存（大文件后续可改流式）
-    final nonce = _randBytes(12);
+    final plainSize = await src.length();
+    final noncePrefix8 = _randBytes(8);
 
-    final secretBox = await _aesGcm.encrypt(
-      plain,
-      secretKey: SecretKey(dek),
-      nonce: nonce,
-    );
+    final tmpEnc = File('${encOut.path}.tmp');
 
-    final bb = BytesBuilder(copy: false);
-    bb.add(nonce);
-    bb.add(secretBox.cipherText);
-    bb.add(secretBox.mac.bytes);
+    RandomAccessFile? inRaf;
+    RandomAccessFile? outRaf;
 
-    if (await encOut.exists()) {
-      await encOut.delete();
+    try {
+      await tmpEnc.parent.create(recursive: true);
+      outRaf = await tmpEnc.open(mode: FileMode.write);
+
+      // header
+      final header = _buildHeader(
+        chunkSize: chunkSize,
+        plainSize: plainSize,
+        noncePrefix8: noncePrefix8,
+      );
+      await outRaf.writeFrom(header);
+
+      // body: chunk-by-chunk
+      inRaf = await src.open(mode: FileMode.read);
+      var chunkIndex = 0;
+
+      while (true) {
+        final plainChunk = await inRaf.read(chunkSize);
+        if (plainChunk.isEmpty) break;
+
+        final nonce = _nonceForChunk(noncePrefix8, chunkIndex);
+        final secretBox = await _aesGcm.encrypt(
+          plainChunk,
+          secretKey: SecretKey(dek),
+          nonce: nonce,
+        );
+
+        // ciphertext len == plaintext len
+        await outRaf.writeFrom(secretBox.cipherText);
+        await outRaf.writeFrom(secretBox.mac.bytes);
+        chunkIndex++;
+      }
+
+      await outRaf.flush();
+      await outRaf.close();
+      outRaf = null;
+
+      // 原子提交 enc 文件
+      await _commitTempFile(tmpEnc, encOut);
+    } finally {
+      try {
+        await inRaf?.close();
+      } catch (_) {}
+      try {
+        await outRaf?.close();
+      } catch (_) {}
+      // 若中途失败，尽力删除 tmp
+      try {
+        if (await tmpEnc.exists()) await tmpEnc.delete();
+      } catch (_) {}
     }
-    await encOut.parent.create(recursive: true);
-    await encOut.writeAsBytes(bb.takeBytes(), flush: true);
   }
 
   Future<void> _decryptEncToFile({
@@ -91,21 +225,67 @@ class CryptoServiceImpl implements CryptoService {
     required File plainOut,
     required Uint8List dek,
   }) async {
-    final data = await encFile.readAsBytes();
-    if (data.length < 12 + 16) {
-      throw const FormatException('Encrypted file too small');
+    final tmpPlain = File('${plainOut.path}.tmp');
+
+    RandomAccessFile? inRaf;
+    RandomAccessFile? outRaf;
+
+    try {
+      inRaf = await encFile.open(mode: FileMode.read);
+
+      final headerBytes = await inRaf.read(_encHeaderSize);
+      final h = _parseHeader(headerBytes);
+
+      var remaining = h.plainSize;
+      var chunkIndex = 0;
+
+      await tmpPlain.parent.create(recursive: true);
+      outRaf = await tmpPlain.open(mode: FileMode.write);
+
+      while (remaining > 0) {
+        final plainLen = remaining < h.chunkSize ? remaining : h.chunkSize;
+
+        final cipherText = await inRaf.read(plainLen);
+        if (cipherText.length != plainLen) {
+          throw const FormatException(
+            'Unexpected EOF while reading ciphertext',
+          );
+        }
+        final tag = await inRaf.read(_gcmTagSize);
+        if (tag.length != _gcmTagSize) {
+          throw const FormatException('Unexpected EOF while reading tag');
+        }
+
+        final nonce = _nonceForChunk(h.noncePrefix8, chunkIndex);
+        final secretBox = SecretBox(cipherText, nonce: nonce, mac: Mac(tag));
+
+        final clear = await _aesGcm.decrypt(
+          secretBox,
+          secretKey: SecretKey(dek),
+        );
+
+        await outRaf.writeFrom(clear);
+
+        remaining -= plainLen;
+        chunkIndex++;
+      }
+
+      await outRaf.flush();
+      await outRaf.close();
+      outRaf = null;
+
+      await _commitTempFile(tmpPlain, plainOut);
+    } finally {
+      try {
+        await inRaf?.close();
+      } catch (_) {}
+      try {
+        await outRaf?.close();
+      } catch (_) {}
+      try {
+        if (await tmpPlain.exists()) await tmpPlain.delete();
+      } catch (_) {}
     }
-
-    final nonce = data.sublist(0, 12);
-    final tag = data.sublist(data.length - 16);
-    final cipherText = data.sublist(12, data.length - 16);
-
-    final secretBox = SecretBox(cipherText, nonce: nonce, mac: Mac(tag));
-
-    final clear = await _aesGcm.decrypt(secretBox, secretKey: SecretKey(dek));
-
-    // 原子写：避免写一半崩溃导致脏文件
-    await fileStore.writeBytesAtomic(plainOut, clear);
   }
 
   Future<Map<String, String>> _wrapDekWithUmk({
@@ -220,6 +400,9 @@ class CryptoServiceImpl implements CryptoService {
         'encRelPath': encRelPath,
         'plainRelPath': plainRelPath,
         'encAlg': 'AES-256-GCM',
+        'encContainer': 'TCF1',
+        'encContainerVersion': 1,
+        'chunkSize': _defaultChunkSize,
       });
 
       if (i == 0) {
@@ -354,9 +537,24 @@ class CryptoServiceImpl implements CryptoService {
           : p.join(openDir.path, _sanitizeFilename(name));
       final plainFile = File(plainPath);
 
+      final expectedSize = entry['origSize'];
       if (await plainFile.exists()) {
-        result.add(plainFile);
-        continue;
+        if (expectedSize is int) {
+          final len = await plainFile.length();
+          if (len == expectedSize) {
+            result.add(plainFile);
+            continue;
+          } else {
+            // 脏/旧文件，删掉重解
+            try {
+              await plainFile.delete();
+            } catch (_) {}
+          }
+        } else {
+          // 没有 expectedSize 时，仍选择复用（或你也可以选择强制重解）
+          result.add(plainFile);
+          continue;
+        }
       }
 
       await _decryptEncToFile(encFile: encFile, plainOut: plainFile, dek: dek);
