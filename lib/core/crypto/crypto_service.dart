@@ -11,6 +11,44 @@ import 'package:time_capsule/core/storage/secure_key_store.dart';
 import 'package:time_capsule/core/storage/file_store.dart';
 import 'package:time_capsule/features/capsules/data/models/capsule.dart';
 
+typedef CryptoProgressCallback = void Function(CryptoProgress p);
+
+enum CryptoOp { encrypt, decrypt }
+
+class CryptoProgress {
+  final CryptoOp op;
+
+  // overall progress across all files
+  final int totalBytes;
+  final int processedBytes;
+
+  // which file is being processed
+  final int fileIndex; // 0-based
+  final int fileCount;
+  final String fileName;
+
+  final bool done;
+
+  const CryptoProgress({
+    required this.op,
+    required this.totalBytes,
+    required this.processedBytes,
+    required this.fileIndex,
+    required this.fileCount,
+    required this.fileName,
+    required this.done,
+  });
+
+  double get fraction {
+    if (totalBytes <= 0) return 0.0;
+    final v = processedBytes / totalBytes;
+    if (v.isNaN) return 0.0;
+    return v.clamp(0.0, 1.0);
+  }
+
+  int get percent => (fraction * 100).round();
+}
+
 abstract class CryptoService {
   /// 旧接口：单文件创建（向后兼容）
   Future<CapsuleCreateResult> createCapsuleFromFile(
@@ -21,11 +59,15 @@ abstract class CryptoService {
   /// 新接口：多文件创建，同一个胶囊中可包含多个文件
   Future<CapsuleCreateResult> createCapsuleFromFiles(
     List<File> srcFiles,
-    CapsuleParams params,
-  );
+    CapsuleParams params, {
+    CryptoProgressCallback? onProgress,
+  });
 
   /// 解密并返回所有可预览文件（输出到 capsule/open/ 下）
-  Future<List<File>> ensureDecryptedFiles({required File manifestFile});
+  Future<List<File>> ensureDecryptedFiles({
+    required File manifestFile,
+    CryptoProgressCallback? onProgress,
+  });
 }
 
 class CryptoServiceImpl implements CryptoService {
@@ -138,6 +180,19 @@ class CryptoServiceImpl implements CryptoService {
     return replaced.isEmpty ? 'file.bin' : replaced;
   }
 
+  int _lastProgressEmitMs = 0;
+
+  void _emitProgressThrottled(CryptoProgressCallback? cb, CryptoProgress p) {
+    if (cb == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // 100ms 节流；done 时强制发
+    if (!p.done && (now - _lastProgressEmitMs) < 100) return;
+
+    _lastProgressEmitMs = now;
+    cb(p);
+  }
+
   /// 文件加密输出格式（分块容器 v1，支持大文件）
   ///
   /// Header(26 bytes):
@@ -158,6 +213,7 @@ class CryptoServiceImpl implements CryptoService {
     required File encOut,
     required Uint8List dek,
     int chunkSize = _defaultChunkSize,
+    void Function(int plainBytesDelta)? onPlainBytes,
   }) async {
     final plainSize = await src.length();
     final noncePrefix8 = _randBytes(8);
@@ -197,6 +253,7 @@ class CryptoServiceImpl implements CryptoService {
         // ciphertext len == plaintext len
         await outRaf.writeFrom(secretBox.cipherText);
         await outRaf.writeFrom(secretBox.mac.bytes);
+        onPlainBytes?.call(plainChunk.length);
         chunkIndex++;
       }
 
@@ -224,6 +281,7 @@ class CryptoServiceImpl implements CryptoService {
     required File encFile,
     required File plainOut,
     required Uint8List dek,
+    void Function(int plainBytesDelta)? onPlainBytes,
   }) async {
     final tmpPlain = File('${plainOut.path}.tmp');
 
@@ -265,6 +323,7 @@ class CryptoServiceImpl implements CryptoService {
         );
 
         await outRaf.writeFrom(clear);
+        onPlainBytes?.call(plainLen);
 
         remaining -= plainLen;
         chunkIndex++;
@@ -339,11 +398,34 @@ class CryptoServiceImpl implements CryptoService {
   @override
   Future<CapsuleCreateResult> createCapsuleFromFiles(
     List<File> srcFiles,
-    CapsuleParams params,
-  ) async {
+    CapsuleParams params, {
+    CryptoProgressCallback? onProgress,
+  }) async {
     if (srcFiles.isEmpty) {
       throw ArgumentError('srcFiles must not be empty');
     }
+    final sizes = <int>[];
+    var totalBytes = 0;
+    for (final f in srcFiles) {
+      final s = await f.length();
+      sizes.add(s);
+      totalBytes += s;
+    }
+    var processed = 0;
+
+    // 开始时发一个 0%
+    _emitProgressThrottled(
+      onProgress,
+      CryptoProgress(
+        op: CryptoOp.encrypt,
+        totalBytes: totalBytes,
+        processedBytes: 0,
+        fileIndex: 0,
+        fileCount: srcFiles.length,
+        fileName: srcFiles.isNotEmpty ? p.basename(srcFiles[0].path) : '',
+        done: false,
+      ),
+    );
 
     final id = _newId();
     final createdAtUtcMs = DateTime.now().toUtc().millisecondsSinceEpoch;
@@ -387,7 +469,28 @@ class CryptoServiceImpl implements CryptoService {
       final encRelPath = p.join('files', encName);
       final encFile = File(p.join(filesDir.path, encName));
 
-      await _encryptFileToEnc(src: src, encOut: encFile, dek: dek);
+      final displayName = p.basename(src.path);
+
+      await _encryptFileToEnc(
+        src: src,
+        encOut: encFile,
+        dek: dek,
+        onPlainBytes: (delta) {
+          processed += delta;
+          _emitProgressThrottled(
+            onProgress,
+            CryptoProgress(
+              op: CryptoOp.encrypt,
+              totalBytes: totalBytes,
+              processedBytes: processed,
+              fileIndex: i,
+              fileCount: srcFiles.length,
+              fileName: displayName,
+              done: false,
+            ),
+          );
+        },
+      );
 
       // 解密输出文件名：open/0000_xxx.ext
       final plainName = '${indexStr}_$origName';
@@ -411,6 +514,19 @@ class CryptoServiceImpl implements CryptoService {
         firstEncRelPath = encRelPath;
       }
     }
+
+    _emitProgressThrottled(
+      onProgress,
+      CryptoProgress(
+        op: CryptoOp.encrypt,
+        totalBytes: totalBytes,
+        processedBytes: totalBytes,
+        fileIndex: srcFiles.length - 1,
+        fileCount: srcFiles.length,
+        fileName: srcFiles.isNotEmpty ? p.basename(srcFiles.last.path) : '',
+        done: true,
+      ),
+    );
 
     // 写 manifest.json
     final manifestMap = <String, Object?>{
@@ -467,7 +583,10 @@ class CryptoServiceImpl implements CryptoService {
   }
 
   @override
-  Future<List<File>> ensureDecryptedFiles({required File manifestFile}) async {
+  Future<List<File>> ensureDecryptedFiles({
+    required File manifestFile,
+    CryptoProgressCallback? onProgress,
+  }) async {
     final manifest = await fileStore.readManifest(manifestFile);
     final capsuleDir = manifestFile.parent;
 
@@ -511,12 +630,35 @@ class CryptoServiceImpl implements CryptoService {
       throw const FormatException('files must be a list');
     }
 
+    int totalBytes = 0;
+    for (final entry in filesField) {
+      if (entry is! Map) continue;
+      final s = entry['origSize'];
+      if (s is int && s > 0) totalBytes += s;
+    }
+    var processed = 0;
+
+    // 初始 0%
+    _emitProgressThrottled(
+      onProgress,
+      CryptoProgress(
+        op: CryptoOp.decrypt,
+        totalBytes: totalBytes,
+        processedBytes: 0,
+        fileIndex: 0,
+        fileCount: filesField.length,
+        fileName: '',
+        done: false,
+      ),
+    );
+
     final openDir = Directory(p.join(capsuleDir.path, 'open'));
     if (!await openDir.exists()) {
       await openDir.create(recursive: true);
     }
 
-    for (final entry in filesField) {
+    for (var i = 0; i < filesField.length; i++) {
+      final entry = filesField[i];
       if (entry is! Map) continue;
 
       final encRelPath =
@@ -538,10 +680,25 @@ class CryptoServiceImpl implements CryptoService {
       final plainFile = File(plainPath);
 
       final expectedSize = entry['origSize'];
+      final displayName = (entry['name'] as String?) ?? 'file.bin';
+
       if (await plainFile.exists()) {
         if (expectedSize is int) {
           final len = await plainFile.length();
           if (len == expectedSize) {
+            processed += expectedSize;
+            _emitProgressThrottled(
+              onProgress,
+              CryptoProgress(
+                op: CryptoOp.decrypt,
+                totalBytes: totalBytes,
+                processedBytes: processed,
+                fileIndex: i,
+                fileCount: filesField.length,
+                fileName: displayName,
+                done: false,
+              ),
+            );
             result.add(plainFile);
             continue;
           } else {
@@ -557,9 +714,41 @@ class CryptoServiceImpl implements CryptoService {
         }
       }
 
-      await _decryptEncToFile(encFile: encFile, plainOut: plainFile, dek: dek);
+      await _decryptEncToFile(
+        encFile: encFile,
+        plainOut: plainFile,
+        dek: dek,
+        onPlainBytes: (delta) {
+          processed += delta;
+          _emitProgressThrottled(
+            onProgress,
+            CryptoProgress(
+              op: CryptoOp.decrypt,
+              totalBytes: totalBytes,
+              processedBytes: processed,
+              fileIndex: i,
+              fileCount: filesField.length,
+              fileName: displayName,
+              done: false,
+            ),
+          );
+        },
+      );
       result.add(plainFile);
     }
+
+    _emitProgressThrottled(
+      onProgress,
+      CryptoProgress(
+        op: CryptoOp.decrypt,
+        totalBytes: totalBytes,
+        processedBytes: totalBytes,
+        fileIndex: filesField.isNotEmpty ? filesField.length - 1 : 0,
+        fileCount: filesField.length,
+        fileName: '',
+        done: true,
+      ),
+    );
 
     return result;
   }

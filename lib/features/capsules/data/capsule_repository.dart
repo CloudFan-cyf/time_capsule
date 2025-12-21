@@ -12,14 +12,24 @@ abstract class CapsuleRepository {
   Future<List<Capsule>> listCapsules();
 
   /// 旧版单文件创建（兼容）
-  Future<Capsule> createCapsuleFromFile(File src, CapsuleParams params);
+  Future<Capsule> createCapsuleFromFile(
+    File src,
+    CapsuleParams params, {
+    CryptoProgressCallback? onProgress,
+  });
 
   /// 新版多文件创建
   Future<Capsule> createCapsuleFromFiles(
     List<File> srcFiles,
-    CapsuleParams params,
-  );
-  Future<OpenResult> openCapsule(Capsule capsule);
+    CapsuleParams params, {
+    CryptoProgressCallback? onProgress,
+  });
+
+  Future<OpenResult> openCapsule(
+    Capsule capsule, {
+    CryptoProgressCallback? onDecryptProgress,
+  });
+
   Future<void> saveCustomOrder(List<String> orderedIds);
   Future<void> deleteCapsule(Capsule capsule);
 }
@@ -145,7 +155,12 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
   }
 
   @override
-  Future<Capsule> createCapsuleFromFile(File src, CapsuleParams params) async {
+  Future<Capsule> createCapsuleFromFile(
+    File src,
+    CapsuleParams params, {
+    CryptoProgressCallback? onProgress,
+  }) async {
+    // 透传进度回调
     final res = await cryptoService.createCapsuleFromFile(src, params);
     // TODO: persist to SQLite
     return res.capsule;
@@ -154,15 +169,24 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
   @override
   Future<Capsule> createCapsuleFromFiles(
     List<File> srcFiles,
-    CapsuleParams params,
-  ) async {
-    final res = await cryptoService.createCapsuleFromFiles(srcFiles, params);
+    CapsuleParams params, {
+    CryptoProgressCallback? onProgress,
+  }) async {
+    // 透传进度回调
+    final res = await cryptoService.createCapsuleFromFiles(
+      srcFiles,
+      params,
+      onProgress: onProgress,
+    );
     // TODO: persist to SQLite
     return res.capsule;
   }
 
   @override
-  Future<OpenResult> openCapsule(Capsule capsule) async {
+  Future<OpenResult> openCapsule(
+    Capsule capsule, {
+    CryptoProgressCallback? onDecryptProgress,
+  }) async {
     final ok = await timeService.canOpen(unlockAtUtcMs: capsule.unlockAtUtcMs);
     if (!ok) {
       return OpenResult(
@@ -174,8 +198,10 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
 
     final manifest = File(capsule.manifestPath);
     try {
+      // 透传解密进度回调
       final files = await cryptoService.ensureDecryptedFiles(
         manifestFile: manifest,
+        onProgress: onDecryptProgress,
       );
       if (files.isEmpty) {
         return OpenResult(
