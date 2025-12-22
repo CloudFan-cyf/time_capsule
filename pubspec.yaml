@@ -1,7 +1,7 @@
 name: time_capsule
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.5
+version: 0.1.6
 
 homepage: https://github.com/CloudFan-cyf/time_capsule
 repository: https://github.com/CloudFan-cyf/time_capsule
