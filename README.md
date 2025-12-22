@@ -106,3 +106,9 @@ flutter build apk
 
 - 默认存储在应用私有目录；可在 设置 → 胶囊文件存储位置 中切换为自定义目录或恢复默认。
 - 可在 设置 中导出/导入主密钥（UMK）以便在其他设备恢复访问权限。
+
+## 开源协议 License
+
+本项目采用 MIT 许可证。详情请查看 [LICENSE](LICENSE) 文件。
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
