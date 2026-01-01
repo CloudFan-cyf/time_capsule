@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:time_capsule/core/storage/file_store.dart';
@@ -21,7 +22,9 @@ class CreateCapsulePage extends StatefulWidget {
 class _CreateCapsulePageState extends State<CreateCapsulePage> {
   final titleCtrl = TextEditingController();
   DateTime? unlockAt;
+
   List<File> pickedFiles = [];
+  List<String> pickedSourceUris = []; // ✅ Android: content://...，用于 SAF 删除
 
   late final CapsuleRepository repo;
   bool _creating = false;
@@ -131,14 +134,33 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                     );
                     if (result == null || result.files.isEmpty) return;
 
-                    final files = result.files
-                        .where((f) => f.path != null)
-                        .map((f) => File(f.path!))
-                        .toList();
+                    final files = <File>[];
+                    final uris = <String>[];
+
+                    for (final pf in result.files) {
+                      final path = pf.path;
+                      if (path != null && path.isNotEmpty) {
+                        files.add(File(path));
+                      }
+                      final id = pf.identifier; // ✅ 关键：content://...
+                      if (id != null && id.startsWith('content://')) {
+                        uris.add(id);
+                      }
+                    }
+
                     if (files.isEmpty) return;
+
+                    if (kDebugMode) {
+                      debugPrint(
+                        '[pick] files=${files.length} uris=${uris.length}',
+                      );
+                      if (uris.isNotEmpty)
+                        debugPrint('[pick] firstUri=${uris.first}');
+                    }
 
                     setState(() {
                       pickedFiles = files;
+                      pickedSourceUris = uris;
                     });
                   },
                   child: Text(l10n.selectFile),
@@ -148,7 +170,6 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
 
             const SizedBox(height: 8),
 
-            // ✅ 自动删除源文件开关（勾选时弹确认）
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               value: _deleteSource,
@@ -211,6 +232,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                           title: titleCtrl.text,
                           unlockAtUtcMs: unlockAt!.millisecondsSinceEpoch,
                         );
+
                         await repo.createCapsuleFromFiles(
                           pickedFiles,
                           params,
@@ -219,7 +241,10 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                             setState(() => _progress = p);
                           },
                           deleteSourceFiles: _deleteSource,
+                          // ✅ 新增：把 content://... 透传给 repo（Android 删除用）
+                          sourceUris: pickedSourceUris,
                         );
+
                         notifyCapsulesChanged();
                         if (!mounted) return;
                         Navigator.of(context).pop();
