@@ -27,6 +27,8 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
   bool _creating = false;
   CryptoProgress? _progress;
 
+  bool _deleteSource = false;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +38,27 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
       timeService: TimeServiceImpl(),
       fileStore: fs,
     );
+  }
+
+  Future<bool> _confirmDeleteSources(S l10n) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(l10n.deleteSourcesConfirmTitle),
+        content: Text(l10n.deleteSourcesConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.Cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.Confirm),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
   }
 
   @override
@@ -97,7 +120,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                   child: Text(
                     pickedFiles.isEmpty
                         ? l10n.selectFile
-                        : '已选择 ${pickedFiles.length} 个文件',
+                        : l10n.selectedFilesCount(pickedFiles.length),
                   ),
                 ),
                 TextButton(
@@ -122,6 +145,32 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                 ),
               ],
             ),
+
+            const SizedBox(height: 8),
+
+            // ✅ 自动删除源文件开关（勾选时弹确认）
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _deleteSource,
+              title: Text(l10n.deleteSourcesToggleTitle),
+              subtitle: Text(l10n.deleteSourcesToggleSubtitle),
+              controlAffinity: ListTileControlAffinity.leading,
+              onChanged: _creating
+                  ? null
+                  : (v) async {
+                      final next = v ?? false;
+                      if (next) {
+                        final ok = await _confirmDeleteSources(l10n);
+                        if (!mounted) return;
+                        if (!ok) {
+                          setState(() => _deleteSource = false);
+                          return;
+                        }
+                      }
+                      setState(() => _deleteSource = next);
+                    },
+            ),
+
             if (_creating) ...[
               const SizedBox(height: 12),
               LinearProgressIndicator(
@@ -130,8 +179,11 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
               const SizedBox(height: 8),
               Text(
                 _progress == null
-                    ? '正在加密...'
-                    : '正在加密：${_progress!.fileName}  ${_progress!.percent}%',
+                    ? l10n.encrypting
+                    : l10n.encryptingWithProgress(
+                        _progress!.fileName,
+                        _progress!.percent,
+                      ),
               ),
             ],
 
@@ -166,6 +218,7 @@ class _CreateCapsulePageState extends State<CreateCapsulePage> {
                             if (!mounted) return;
                             setState(() => _progress = p);
                           },
+                          deleteSourceFiles: _deleteSource,
                         );
                         notifyCapsulesChanged();
                         if (!mounted) return;

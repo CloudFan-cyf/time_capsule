@@ -109,5 +109,30 @@
     "timeStatusSubtitleWithAgo": "{source}\nCurrent: {time}\n{ago}",
     "timeStatusSubtitleWithAgoAndError": "{source}\nCurrent: {time}\n{ago}\nError: {err}",
     "version": "Version: ",
+    "selectedFilesCount": "Selected {count} files",
+    "@selectedFilesCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "deleteSourcesToggleTitle": "Automatically delete source files",
+    "deleteSourcesToggleSubtitle": "After successfully creating a capsule, the selected files will be permanently deleted (irreversible)",
+    "deleteSourcesConfirmTitle": "Confirm delete source files?",
+    "deleteSourcesConfirmBody": "After successfully creating a capsule, the app will permanently delete the source files you just selected. This action is irreversible. Please make sure you have backed up or no longer need these files.",
+    "encrypting": "Encrypting...",
+    "encryptingWithProgress": "Encrypting: {fileName}  {percent}%",
+    "@encryptingWithProgress": {
+        "placeholders": {
+            "fileName": {
+                "type": "String"
+            },
+            "percent": {
+                "type": "int"
+            }
+        }
+    },
+    "Confirm": "Confirm",
     "@@locale": "en"
 }

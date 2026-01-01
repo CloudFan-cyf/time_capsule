@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import 'models/capsule.dart';
@@ -23,6 +24,7 @@ abstract class CapsuleRepository {
     List<File> srcFiles,
     CapsuleParams params, {
     CryptoProgressCallback? onProgress,
+    bool deleteSourceFiles = false,
   });
 
   Future<OpenResult> openCapsule(
@@ -171,6 +173,7 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
     List<File> srcFiles,
     CapsuleParams params, {
     CryptoProgressCallback? onProgress,
+    bool deleteSourceFiles = false,
   }) async {
     // 透传进度回调
     final res = await cryptoService.createCapsuleFromFiles(
@@ -178,6 +181,22 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
       params,
       onProgress: onProgress,
     );
+    if (deleteSourceFiles) {
+      for (final f in srcFiles) {
+        try {
+          if (await f.exists()) {
+            await f.delete();
+          }
+        } catch (e) {
+          // MVP：尽力删除，不影响胶囊创建成功
+          // 你也可以用 debugPrint 记录，或后续把失败列表返回给 UI
+          if (kDebugMode) {
+            debugPrint('Failed to delete source file ${f.path}: $e');
+          }
+        }
+      }
+    }
+
     // TODO: persist to SQLite
     return res.capsule;
   }

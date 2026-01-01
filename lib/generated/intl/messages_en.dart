@@ -25,35 +25,40 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m1(error) => "Creation failed: ${error}";
 
-  static String m2(error) => "Master key export failed: ${error}";
+  static String m2(fileName, percent) => "Encrypting: ${fileName}  ${percent}%";
 
-  static String m3(error) => "Master key import failed: ${error}";
+  static String m3(error) => "Master key export failed: ${error}";
 
-  static String m4(path) => "Using custom directory:\n${path}";
+  static String m4(error) => "Master key import failed: ${error}";
 
-  static String m5(path) => "Using app private directory:\n${path}";
+  static String m5(count) => "Selected ${count} files";
 
-  static String m6(seconds) => "Time synced ${seconds} seconds ago";
+  static String m6(path) => "Using custom directory:\n${path}";
 
-  static String m7(seconds) =>
+  static String m7(path) => "Using app private directory:\n${path}";
+
+  static String m8(seconds) => "Time synced ${seconds} seconds ago";
+
+  static String m9(seconds) =>
       "Please wait ${seconds} seconds before refreshing again";
 
-  static String m8(source, now, last) =>
+  static String m10(source, now, last) =>
       "Source: ${source}\nCurrent time: ${now}\nLast sync: ${last}";
 
-  static String m9(source, time, ago) => "${source}\nCurrent: ${time}\n${ago}";
+  static String m11(source, time, ago) => "${source}\nCurrent: ${time}\n${ago}";
 
-  static String m10(source, time, ago, err) =>
+  static String m12(source, time, ago, err) =>
       "${source}\nCurrent: ${time}\n${ago}\nError: ${err}";
 
-  static String m11(source, now, last, error) =>
+  static String m13(source, now, last, error) =>
       "Source: ${source}\nCurrent time: ${now}\nLast sync: ${last}\nError: ${error}";
 
-  static String m12(time) => "Unlock time: ${time}";
+  static String m14(time) => "Unlock time: ${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "Confirm": MessageLookupByLibrary.simpleMessage("Confirm"),
     "Delete": MessageLookupByLibrary.simpleMessage("Delete"),
     "DeleteCapsuleConfirmation": m0,
     "Refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
@@ -80,7 +85,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "decryptSuccess": MessageLookupByLibrary.simpleMessage(
       "Decrypted successfully, preparing preview",
     ),
-    "exportFailed": m2,
+    "deleteSourcesConfirmBody": MessageLookupByLibrary.simpleMessage(
+      "After successfully creating a capsule, the app will permanently delete the source files you just selected. This action is irreversible. Please make sure you have backed up or no longer need these files.",
+    ),
+    "deleteSourcesConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "Confirm delete source files?",
+    ),
+    "deleteSourcesToggleSubtitle": MessageLookupByLibrary.simpleMessage(
+      "After successfully creating a capsule, the selected files will be permanently deleted (irreversible)",
+    ),
+    "deleteSourcesToggleTitle": MessageLookupByLibrary.simpleMessage(
+      "Automatically delete source files",
+    ),
+    "encrypting": MessageLookupByLibrary.simpleMessage("Encrypting..."),
+    "encryptingWithProgress": m2,
+    "exportFailed": m3,
     "exportMasterKey": MessageLookupByLibrary.simpleMessage(
       "Export Master Key",
     ),
@@ -96,7 +115,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "exportSuccess": MessageLookupByLibrary.simpleMessage(
       "Master key exported successfully",
     ),
-    "importFailed": m3,
+    "importFailed": m4,
     "importMasterKey": MessageLookupByLibrary.simpleMessage(
       "Import Master Key",
     ),
@@ -123,6 +142,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectUnlockTime": MessageLookupByLibrary.simpleMessage(
       "Select unlock time",
     ),
+    "selectedFilesCount": m5,
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "settingsPickDir": MessageLookupByLibrary.simpleMessage("Choose directory"),
     "settingsRestoreDefault": MessageLookupByLibrary.simpleMessage(
@@ -138,8 +158,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "settingsStorageTitle": MessageLookupByLibrary.simpleMessage(
       "Capsule storage location",
     ),
-    "settingsStorageUsingCustom": m4,
-    "settingsStorageUsingDefault": m5,
+    "settingsStorageUsingCustom": m6,
+    "settingsStorageUsingDefault": m7,
     "shareExportText": MessageLookupByLibrary.simpleMessage(
       "TimeCapsule Master Key Export",
     ),
@@ -151,19 +171,19 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "switchToDark": MessageLookupByLibrary.simpleMessage("Switch to dark"),
     "switchToLight": MessageLookupByLibrary.simpleMessage("Switch to light"),
-    "syncedSecondsAgo": m6,
+    "syncedSecondsAgo": m8,
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "theme": MessageLookupByLibrary.simpleMessage("Theme"),
-    "timeRefreshCooldown": m7,
-    "timeStatusSubtitle": m8,
-    "timeStatusSubtitleWithAgo": m9,
-    "timeStatusSubtitleWithAgoAndError": m10,
-    "timeStatusSubtitleWithError": m11,
+    "timeRefreshCooldown": m9,
+    "timeStatusSubtitle": m10,
+    "timeStatusSubtitleWithAgo": m11,
+    "timeStatusSubtitleWithAgoAndError": m12,
+    "timeStatusSubtitleWithError": m13,
     "timeStatusTitle": MessageLookupByLibrary.simpleMessage(
       "Network time status",
     ),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("Total Capsules"),
-    "unlockTime": m12,
+    "unlockTime": m14,
     "unlockable": MessageLookupByLibrary.simpleMessage("Unlockable"),
     "version": MessageLookupByLibrary.simpleMessage("Version: "),
   };
