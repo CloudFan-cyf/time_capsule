@@ -1,7 +1,7 @@
 name: time_capsule
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.6
+version: 0.1.7
 
 homepage: https://github.com/CloudFan-cyf/time_capsule
 repository: https://github.com/CloudFan-cyf/time_capsule
@@ -29,6 +29,7 @@ dependencies:
   open_filex: ^4.7.0
   share_plus: ^10.0.0
   package_info_plus: ^8.0.0
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -38,5 +39,16 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/splash/capsule_closed.png
+    - assets/splash/capsule_open.png
+    - assets/splash/clock.gif
 flutter_intl:
   enabled: true
+flutter_icons:
+  android: true
+  ios: true
+  windows:
+    generate: true
+    icon_size: 256
+  image_path: "assets/icon/app_icon.png"

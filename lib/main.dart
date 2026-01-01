@@ -6,6 +6,7 @@ import 'package:time_capsule/providers/auxiliary/theme_scope.dart';
 
 import 'package:time_capsule/ui/app_shell.dart';
 import 'package:time_capsule/ui/pages/create_capsule_page.dart';
+import 'package:time_capsule/ui/splash/splash_animated_page.dart';
 
 final ThemeManager _themeManager = ThemeManager();
 
@@ -45,7 +46,7 @@ class TimeCapsuleApp extends StatelessWidget {
           return supportedLocales.first;
         }
       },
-      home: const AppShell(),
+      home: const SplashAnimatedPage(dashboard: AppShell()),
       routes: {'/create': (_) => const CreateCapsulePage()},
     );
   }
