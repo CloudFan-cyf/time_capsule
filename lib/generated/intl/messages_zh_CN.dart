@@ -24,34 +24,39 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m1(error) => "创建失败：${error}";
 
-  static String m2(error) => "主密钥导出失败：${error}";
+  static String m2(fileName, percent) => "正在加密：${fileName}  ${percent}%";
 
-  static String m3(error) => "导入主密钥失败：${error}";
+  static String m3(error) => "主密钥导出失败：${error}";
 
-  static String m4(path) => "使用自定义目录：\n${path}";
+  static String m4(error) => "导入主密钥失败：${error}";
 
-  static String m5(path) => "使用应用私有目录：\n${path}";
+  static String m5(count) => "已选择 ${count} 个文件";
 
-  static String m6(seconds) => "时间已在 ${seconds} 秒前同步";
+  static String m6(path) => "使用自定义目录：\n${path}";
 
-  static String m7(seconds) => "请在 ${seconds} 秒后再刷新";
+  static String m7(path) => "使用应用私有目录：\n${path}";
 
-  static String m8(source, now, last) =>
+  static String m8(seconds) => "时间已在 ${seconds} 秒前同步";
+
+  static String m9(seconds) => "请在 ${seconds} 秒后再刷新";
+
+  static String m10(source, now, last) =>
       "来源：${source}\n当前时间：${now}\n上次同步：${last}";
 
-  static String m9(source, time, ago) => "${source}\n当前：${time}\n${ago}";
+  static String m11(source, time, ago) => "${source}\n当前：${time}\n${ago}";
 
-  static String m10(source, time, ago, err) =>
+  static String m12(source, time, ago, err) =>
       "${source}\n当前：${time}\n${ago}\n错误：${err}";
 
-  static String m11(source, now, last, error) =>
+  static String m13(source, now, last, error) =>
       "来源：${source}\n当前时间：${now}\n上次同步：${last}\n错误：${error}";
 
-  static String m12(time) => "解锁时间：${time}";
+  static String m14(time) => "解锁时间：${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "Cancel": MessageLookupByLibrary.simpleMessage("取消"),
+    "Confirm": MessageLookupByLibrary.simpleMessage("确认"),
     "Delete": MessageLookupByLibrary.simpleMessage("删除"),
     "DeleteCapsuleConfirmation": m0,
     "Refresh": MessageLookupByLibrary.simpleMessage("刷新"),
@@ -74,7 +79,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "dark": MessageLookupByLibrary.simpleMessage("深色"),
     "dashboard": MessageLookupByLibrary.simpleMessage("统计数据"),
     "decryptSuccess": MessageLookupByLibrary.simpleMessage("解密成功，准备预览"),
-    "exportFailed": m2,
+    "deleteSourcesConfirmBody": MessageLookupByLibrary.simpleMessage(
+      "创建胶囊成功后，应用将永久删除你刚选择的源文件。此操作不可恢复。请确认你已备份或不再需要这些文件。",
+    ),
+    "deleteSourcesConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "确认删除源文件？",
+    ),
+    "deleteSourcesToggleSubtitle": MessageLookupByLibrary.simpleMessage(
+      "创建胶囊成功后，将永久删除所选文件（不可恢复）",
+    ),
+    "deleteSourcesToggleTitle": MessageLookupByLibrary.simpleMessage("自动删除源文件"),
+    "encrypting": MessageLookupByLibrary.simpleMessage("正在加密..."),
+    "encryptingWithProgress": m2,
+    "exportFailed": m3,
     "exportMasterKey": MessageLookupByLibrary.simpleMessage("导出主密钥"),
     "exportMasterKeyDesc": MessageLookupByLibrary.simpleMessage(
       "导出可在其他设备导入的主密钥文件",
@@ -84,7 +101,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "exportMasterKeyTitle": MessageLookupByLibrary.simpleMessage("导出主密钥"),
     "exportSuccess": MessageLookupByLibrary.simpleMessage("主密钥导出成功"),
-    "importFailed": m3,
+    "importFailed": m4,
     "importMasterKey": MessageLookupByLibrary.simpleMessage("导入主密钥"),
     "importMasterKeyDesc": MessageLookupByLibrary.simpleMessage(
       "从导出的主密钥文件恢复访问权限",
@@ -101,6 +118,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "pleaseFillAll": MessageLookupByLibrary.simpleMessage("请完整填写信息"),
     "selectFile": MessageLookupByLibrary.simpleMessage("选择文件"),
     "selectUnlockTime": MessageLookupByLibrary.simpleMessage("请选择解锁时间"),
+    "selectedFilesCount": m5,
     "settings": MessageLookupByLibrary.simpleMessage("设置"),
     "settingsPickDir": MessageLookupByLibrary.simpleMessage("选择目录"),
     "settingsRestoreDefault": MessageLookupByLibrary.simpleMessage("恢复默认"),
@@ -110,24 +128,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "settingsSecurityTitle": MessageLookupByLibrary.simpleMessage("安全设置（占位）"),
     "settingsStorageLoading": MessageLookupByLibrary.simpleMessage("加载中…"),
     "settingsStorageTitle": MessageLookupByLibrary.simpleMessage("胶囊文件存储位置"),
-    "settingsStorageUsingCustom": m4,
-    "settingsStorageUsingDefault": m5,
+    "settingsStorageUsingCustom": m6,
+    "settingsStorageUsingDefault": m7,
     "shareExportText": MessageLookupByLibrary.simpleMessage("时光胶囊主密钥导出"),
     "storageDirReset": MessageLookupByLibrary.simpleMessage("已恢复为默认存储目录"),
     "storageDirSet": MessageLookupByLibrary.simpleMessage("已设置新的胶囊存储目录"),
     "switchToDark": MessageLookupByLibrary.simpleMessage("切换到深色"),
     "switchToLight": MessageLookupByLibrary.simpleMessage("切换到浅色"),
-    "syncedSecondsAgo": m6,
+    "syncedSecondsAgo": m8,
     "system": MessageLookupByLibrary.simpleMessage("跟随系统"),
     "theme": MessageLookupByLibrary.simpleMessage("主题"),
-    "timeRefreshCooldown": m7,
-    "timeStatusSubtitle": m8,
-    "timeStatusSubtitleWithAgo": m9,
-    "timeStatusSubtitleWithAgoAndError": m10,
-    "timeStatusSubtitleWithError": m11,
+    "timeRefreshCooldown": m9,
+    "timeStatusSubtitle": m10,
+    "timeStatusSubtitleWithAgo": m11,
+    "timeStatusSubtitleWithAgoAndError": m12,
+    "timeStatusSubtitleWithError": m13,
     "timeStatusTitle": MessageLookupByLibrary.simpleMessage("联网校时状态"),
     "totalCapsules": MessageLookupByLibrary.simpleMessage("总胶囊数"),
-    "unlockTime": m12,
+    "unlockTime": m14,
     "unlockable": MessageLookupByLibrary.simpleMessage("可解锁数"),
     "version": MessageLookupByLibrary.simpleMessage("版本："),
   };

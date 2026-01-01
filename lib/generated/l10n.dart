@@ -628,6 +628,81 @@ class S {
   String get version {
     return Intl.message('Version: ', name: 'version', desc: '', args: []);
   }
+
+  /// `Selected {count} files`
+  String selectedFilesCount(int count) {
+    return Intl.message(
+      'Selected $count files',
+      name: 'selectedFilesCount',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Automatically delete source files`
+  String get deleteSourcesToggleTitle {
+    return Intl.message(
+      'Automatically delete source files',
+      name: 'deleteSourcesToggleTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `After successfully creating a capsule, the selected files will be permanently deleted (irreversible)`
+  String get deleteSourcesToggleSubtitle {
+    return Intl.message(
+      'After successfully creating a capsule, the selected files will be permanently deleted (irreversible)',
+      name: 'deleteSourcesToggleSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm delete source files?`
+  String get deleteSourcesConfirmTitle {
+    return Intl.message(
+      'Confirm delete source files?',
+      name: 'deleteSourcesConfirmTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `After successfully creating a capsule, the app will permanently delete the source files you just selected. This action is irreversible. Please make sure you have backed up or no longer need these files.`
+  String get deleteSourcesConfirmBody {
+    return Intl.message(
+      'After successfully creating a capsule, the app will permanently delete the source files you just selected. This action is irreversible. Please make sure you have backed up or no longer need these files.',
+      name: 'deleteSourcesConfirmBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Encrypting...`
+  String get encrypting {
+    return Intl.message(
+      'Encrypting...',
+      name: 'encrypting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Encrypting: {fileName}  {percent}%`
+  String encryptingWithProgress(String fileName, int percent) {
+    return Intl.message(
+      'Encrypting: $fileName  $percent%',
+      name: 'encryptingWithProgress',
+      desc: '',
+      args: [fileName, percent],
+    );
+  }
+
+  /// `Confirm`
+  String get Confirm {
+    return Intl.message('Confirm', name: 'Confirm', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

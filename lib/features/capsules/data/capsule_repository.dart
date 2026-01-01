@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import 'models/capsule.dart';
 import 'models/errors.dart';
+import 'package:flutter/services.dart';
 import '../../../core/crypto/crypto_service.dart';
 import '../../../core/time/time_service.dart';
 import 'package:time_capsule/core/storage/file_store.dart';
@@ -23,6 +25,8 @@ abstract class CapsuleRepository {
     List<File> srcFiles,
     CapsuleParams params, {
     CryptoProgressCallback? onProgress,
+    bool deleteSourceFiles = false,
+    List<String> sourceUris, // ✅ 新增
   });
 
   Future<OpenResult> openCapsule(
@@ -54,6 +58,7 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
     required this.timeService,
     FileStore? fileStore,
   }) : fileStore = fileStore ?? FileStoreImpl();
+  static const MethodChannel _fileOps = MethodChannel('time_capsule/file_ops');
 
   int? _asInt(Object? v) {
     if (v is int) return v;
@@ -171,14 +176,65 @@ class CapsuleRepositoryImpl implements CapsuleRepository {
     List<File> srcFiles,
     CapsuleParams params, {
     CryptoProgressCallback? onProgress,
+    bool deleteSourceFiles = false,
+    List<String> sourceUris = const [],
   }) async {
-    // 透传进度回调
     final res = await cryptoService.createCapsuleFromFiles(
       srcFiles,
       params,
       onProgress: onProgress,
     );
-    // TODO: persist to SQLite
+
+    if (deleteSourceFiles) {
+      if (!kIsWeb && Platform.isAndroid) {
+        // ✅ Android: 只发起一次删除请求，避免 BUSY
+        final uris = sourceUris
+            .where((u) => u.startsWith('content://'))
+            .toList();
+        if (kDebugMode) {
+          debugPrint('[deleteSource] android uris=${uris.length}');
+        }
+        if (uris.isNotEmpty) {
+          try {
+            await _fileOps.invokeMethod('deleteUris', {'uris': uris});
+          } on PlatformException catch (e) {
+            if (kDebugMode) {
+              debugPrint('[deleteSource] android channel failed: $e');
+            }
+          }
+        } else {
+          // 兜底：如果没有 uri（比如来自 file_picker cache path），就按路径删（可能只删缓存）
+          for (final f in srcFiles) {
+            try {
+              if (await f.exists()) await f.delete();
+            } catch (e) {
+              if (kDebugMode) {
+                debugPrint(
+                  '[deleteSource] android path delete failed: ${f.path} err=$e',
+                );
+              }
+            }
+          }
+        }
+      } else {
+        // ✅ Windows / macOS / Linux：路径删除
+        for (final f in srcFiles) {
+          final path = f.path;
+          final ex = await f.exists();
+          if (kDebugMode) {
+            debugPrint('[deleteSource] path=$path exists=$ex');
+          }
+          if (!ex) continue;
+          try {
+            await f.delete();
+            if (kDebugMode) debugPrint('[deleteSource] deleted: $path');
+          } catch (e) {
+            if (kDebugMode) debugPrint('[deleteSource] failed: $path err=$e');
+          }
+        }
+      }
+    }
+
     return res.capsule;
   }
 

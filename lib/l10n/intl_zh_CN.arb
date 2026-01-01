@@ -109,5 +109,30 @@
     "timeStatusSubtitleWithAgo": "{source}\n当前：{time}\n{ago}",
     "timeStatusSubtitleWithAgoAndError": "{source}\n当前：{time}\n{ago}\n错误：{err}",
     "version": "版本：",
+    "selectedFilesCount": "已选择 {count} 个文件",
+    "@selectedFilesCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "deleteSourcesToggleTitle": "自动删除源文件",
+    "deleteSourcesToggleSubtitle": "创建胶囊成功后，将永久删除所选文件（不可恢复）",
+    "deleteSourcesConfirmTitle": "确认删除源文件？",
+    "deleteSourcesConfirmBody": "创建胶囊成功后，应用将永久删除你刚选择的源文件。此操作不可恢复。请确认你已备份或不再需要这些文件。",
+    "encrypting": "正在加密...",
+    "encryptingWithProgress": "正在加密：{fileName}  {percent}%",
+    "@encryptingWithProgress": {
+        "placeholders": {
+            "fileName": {
+                "type": "String"
+            },
+            "percent": {
+                "type": "int"
+            }
+        }
+    },
+    "Confirm": "确认",
     "@@locale": "zh_CN"
 }
