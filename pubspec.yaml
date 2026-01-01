@@ -39,6 +39,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/splash/capsule_closed.png
+    - assets/splash/capsule_open.png
+    - assets/splash/clock.gif
 flutter_intl:
   enabled: true
 flutter_icons:
