@@ -112,7 +112,9 @@ flutter build apk
 
 UMK 可导出/导入实现设备迁移；本机存储时由设备密钥 DPK 保护，降低 UMK 明文落盘风险。
 
-
+## TODOS
+- 优化`CapsuleRepository`（胶囊数据仓库类型）的实现方式，从当前的扫描本地文件，改为使用SQL存储。并将类型改为`ChangeNotifier`以实现UI实时同步，无需刷新
+- 优化UI设计
 ## 开源协议 License
 
 本项目采用 MIT 许可证。详情请查看 [LICENSE](LICENSE) 文件。
